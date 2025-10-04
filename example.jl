@@ -1,4 +1,4 @@
-using FastBreak, Distributions
+using FastBreak,Distributions
 
 function example()
     # Generate synthetic data
@@ -25,14 +25,10 @@ function example()
     # Fit model
     results = fit!(model, show_trace=false)
     
-    println("\n=== Results ===")
-    println("True β: ", true_β)
-    println("Fitted β: ", round.(results.model.β, digits=3))
-    println("\nTrue ψ: ", true_breakpoints)
-    println("Fitted ψ: ", results.model.ψ)
-    println("\nTrue σ: ", true_σ)
-    println("Fitted σ: ", round(results.model.σ, digits=3))
-    
     return results
 end
+
+
+print_results(example())
+
 
