@@ -102,7 +102,11 @@ function fit!(model::SegmentedModel;
     # Initialize
     β_init = randn(n_beta) * 0.1
     β_init[1] = mean(y)
-    ψ_init = [quantile(x, q) for q in range(0.2, 0.8, length=n_breakpoints)]
+    ψ_init = if n_breakpoints == 1
+        [quantile(x, 0.5)]
+    else
+        [quantile(x, q) for q in range(0.2, 0.8, length=n_breakpoints)]
+    end
     log_σ_init = log(std(y))
     
     params_init = vcat(β_init, ψ_init, log_σ_init)
