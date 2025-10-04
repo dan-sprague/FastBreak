@@ -26,9 +26,9 @@ Identifying the probable interval of time that population growth curves change b
 </p>
 
 However, this approach can break down with complex functions, particularly if changepoints are closely spaced. 
-
-<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_bayes.png" alt="Population Growth 1" width="45%"/>
-
+<p align = "center">
+<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_bayes.png" alt="Population Growth 1" width="90%"/>
+</p>
 ## Installation
 
 ```julia
