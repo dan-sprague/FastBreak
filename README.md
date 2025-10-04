@@ -7,6 +7,9 @@ No frills Julia package for fast univariate (for now) segmented regression with 
 FastBreak fits piecewise linear (segmented) regression models with an arbitrary number of breakpoints using maximum likelihood estimation. The package uses handrolled gradients and hessians to optimize using Newton's method, along with standard errors and confidence intervals for all parameters.
 
 ## Features
+
+MLE fit works well for 1-3 break points. Bayesian sampling required for more complex functions (sine)
+
 - **Multiple breakpoints**: Fit models with any number of breakpoints
 - **Fast optimization**: Analytical gradients and Hessians for Newton's method
 - **Statistical inference**: Standard errors, confidence intervals, and correlation matrices on breakpoints and slopes. 

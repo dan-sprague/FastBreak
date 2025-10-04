@@ -38,6 +38,10 @@ function hessian!(hess, θ, model::SegmentedModel)
         dy_dψ[:, i] .= -β[i+2] .* indicators
     end
 
+    # Get prior parameters
+    mean_y = mean(model.y)
+    sd_y = std(model.y)
+
     # Compute Hessian in ordered space
     hess_ordered = zeros(n_params, n_params)
 
@@ -46,6 +50,16 @@ function hessian!(hess, θ, model::SegmentedModel)
         for k in 1:n_beta
             hess_ordered[j, k] = sum(dy_dβ[:, j] .* dy_dβ[:, k]) / σ2
         end
+    end
+
+    # Add prior contributions to β block (diagonal only, priors are independent)
+    # beta[1] ~ normal(mean_y, sd_y*2): ∂²/∂β[1]² = 1/(sd_y*2)^2
+    prior_var_intercept = (sd_y * 2)^2
+    hess_ordered[1, 1] += 1.0 / prior_var_intercept
+
+    # beta[2:(K+2)] ~ normal(0, 10): ∂²/∂β[i]² = 1/100
+    for i in 2:n_beta
+        hess_ordered[i, i] += 1.0 / 100.0
     end
 
     # Block 2: ∂²NLL/∂β[j]∂ψ[k]
@@ -82,7 +96,10 @@ function hessian!(hess, θ, model::SegmentedModel)
     end
 
     # Block 6: ∂²NLL/∂(log_σ)²
+    # Likelihood contribution
     hess_ordered[n_params, n_params] = 2.0 * sum_sq_residuals / σ2
+    # Prior contribution: sigma ~ exponential(10), ∂²/∂(log_σ)² = 10*σ
+    hess_ordered[n_params, n_params] += 10.0 * σ
 
     # Now transform Hessian to unconstrained space
     # Build Jacobian matrix J where J[i,j] = ∂ψ[i]/∂θ_ψ[j]

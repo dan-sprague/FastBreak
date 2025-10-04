@@ -45,27 +45,18 @@ function predict(model::SegmentedModel, θ::Vector{Float64})
     n_breakpoints = model.n_breakpoints
 
     x = model.x
-    # Extract parameters
     β = θ[1:n_beta]
     θ_ψ = θ[n_beta+1:n_beta+n_breakpoints]
-    ψ = transform_to_ordered(θ_ψ)  # Transform to ordered space
-
-    # Clamp breakpoints to valid range
-    xmin, xmax = model.ψ_prior_range
-    ψ = clamp.(ψ, xmin, xmax)
-
-    # Compute predictions
+    ψ = transform_to_ordered(θ_ψ)
+        
     ŷ = fill(β[1], length(x))
     ŷ .+= β[2] .* x
-
     for i in 1:n_breakpoints
         ŷ .+= β[i+2] .* max.(0, x .- ψ[i])
     end
-
+    
     return ŷ
 end
-
-
 function nll(θ, model::SegmentedModel)
     n = length(model.y)
     n_breakpoints = model.n_breakpoints
@@ -77,10 +68,6 @@ function nll(θ, model::SegmentedModel)
     log_σ = θ[end]
     σ = exp(log_σ)
 
-    # Clamp breakpoints to valid range
-    xmin, xmax = model.ψ_prior_range
-    ψ = clamp.(ψ, xmin, xmax)
-
     # Compute predictions
     y_pred = fill(β[1], n)
     y_pred .+= β[2] .* model.x
@@ -88,15 +75,46 @@ function nll(θ, model::SegmentedModel)
         y_pred .+= β[i+2] .* max.(0, model.x .- ψ[i])
     end
 
-    # NLL = n*log(σ) + 1/(2σ²)*Σ(residuals²)
+    # Likelihood: y ~ normal(mu, sigma)
     residuals = model.y .- y_pred
     sum_sq_residuals = sum(residuals.^2)
 
-    nll = n * log_σ + sum_sq_residuals / (2 * σ^2)
+    neg_log_likelihood = n * log_σ + sum_sq_residuals / (2 * σ^2)
 
-    return nll
+    # Priors (matching Stan model)
+    mean_y = mean(model.y)
+    sd_y = std(model.y)
+    xmin, xmax = model.ψ_prior_range
+
+    neg_log_prior = 0.0
+
+    # sigma ~ exponential(10)
+    # p(sigma) = lambda * exp(-lambda * sigma), lambda = 10
+    # -log p(sigma) = -log(lambda) + lambda * sigma = -log(10) + 10 * sigma
+    neg_log_prior += 10.0 * σ - log(10.0)
+
+    # beta[1] ~ normal(mean_y, sd_y * 2)
+    # -log p(beta[1]) = 0.5 * log(2π) + log(sd) + 0.5 * ((beta[1] - mean_y) / sd)^2
+    prior_sd_intercept = sd_y * 2
+    neg_log_prior += 0.5 * ((β[1] - mean_y) / prior_sd_intercept)^2
+
+    # beta[2:(K+2)] ~ normal(0, 10)
+    for i in 2:n_beta
+        neg_log_prior += 0.5 * (β[i] / 10.0)^2
+    end
+
+    # psi ~ uniform(min_x, max_x)
+    # -log p(psi) = log(max_x - min_x) for each, but constant so skip
+    # Check if in bounds (return Inf if not)
+    for i in 1:n_breakpoints
+        if ψ[i] < xmin || ψ[i] > xmax
+            return Inf
+        end
+    end
+
+    # MAP objective = negative log posterior
+    return neg_log_likelihood + neg_log_prior
 end
-
 """
     fit!(model; kwargs...)
 
@@ -168,33 +186,45 @@ function fit!(model::SegmentedModel;
     if any(eigvals_hess .<= 1e-10)
         @warn "Hessian is not positive definite. Using regularization."
         println("Min eigenvalue: ", minimum(eigvals_hess))
-        # Add small diagonal regularization
         fisher_info = fisher_info + I * 1e-6
     end
     
     covariance_matrix = inv(fisher_info)
     
-    standard_errors = sqrt.(abs.(diag(covariance_matrix)))
-    
-    D_inv = Diagonal(1.0 ./ standard_errors)
-    correlation_matrix = D_inv * covariance_matrix * D_inv
-    
-    z_crit = 1.96  # Approx for 95% CI
-    if confidence_level != 0.95
-        throw(ArgumentError("Only 0.95 confidence level is currently supported teehee"))
-    end
+    z_crit = 1.96  # For ~95% CI
 
     # Extract parameters
     β_opt = params_opt[1:n_beta]
     θ_ψ_opt = params_opt[n_beta+1:n_beta+n_breakpoints]
-    ψ_opt_continuous = transform_to_ordered(θ_ψ_opt)  # Transform to ordered space
+    ψ_opt_continuous = transform_to_ordered(θ_ψ_opt)
     log_σ_opt = params_opt[end]
     σ_opt = exp(log_σ_opt)
     
-    # Standard errors
-    β_se = standard_errors[1:n_beta]
-    ψ_se = standard_errors[n_beta+1:n_beta+n_breakpoints]
-    log_σ_se = standard_errors[end]
+    # Standard errors for β (no transformation needed)
+    β_se = sqrt.(abs.(diag(covariance_matrix[1:n_beta, 1:n_beta])))
+    
+    # Transform ψ covariance using Jacobian (delta method)
+    cov_θ_ψ = covariance_matrix[n_beta+1:n_beta+n_breakpoints, 
+                                 n_beta+1:n_beta+n_breakpoints]
+    
+    # Build Jacobian: J[i,j] = ∂ψ[i]/∂θ_ψ[j]
+    J = zeros(n_breakpoints, n_breakpoints)
+    for i in 1:n_breakpoints
+        for j in 1:n_breakpoints
+            if j == 1
+                J[i, j] = 1.0  # All ψ depend on θ_ψ[1]
+            elseif j <= i
+                J[i, j] = exp(θ_ψ_opt[j])  # ψ[i] depends on θ_ψ[j] for j ≤ i
+            end
+        end
+    end
+    
+    # Transform covariance: Cov(ψ) = J * Cov(θ_ψ) * J^T
+    cov_ψ = J * cov_θ_ψ * J'
+    ψ_se = sqrt.(abs.(diag(cov_ψ)))  # Correct standard errors in ψ space
+    
+    # Standard error for log_σ
+    log_σ_se = sqrt(abs(covariance_matrix[end, end]))
     
     # Confidence intervals
     β_ci = zeros(2, n_beta)
@@ -202,7 +232,7 @@ function fit!(model::SegmentedModel;
     β_ci[2, :] = β_opt .+ z_crit .* β_se
     
     ψ_ci = zeros(2, n_breakpoints)
-    ψ_ci[1, :] = ψ_opt_continuous .- z_crit .* ψ_se
+    ψ_ci[1, :] = ψ_opt_continuous .- z_crit .* ψ_se  # Now correct!
     ψ_ci[2, :] = ψ_opt_continuous .+ z_crit .* ψ_se
     
     # σ using delta method
@@ -210,8 +240,37 @@ function fit!(model::SegmentedModel;
     σ_ci_lower = σ_opt - z_crit * σ_se
     σ_ci_upper = σ_opt + z_crit * σ_se
     
-    # Create model
-    ψ_opt_int = round.(Int, ψ_opt_continuous)  # Already ordered from transformation
+    # Compute full standard errors and correlation matrix
+    standard_errors = vcat(β_se, ψ_se, σ_se)
+    
+    # Build full covariance matrix in transformed space
+    cov_full = zeros(n_params, n_params)
+    cov_full[1:n_beta, 1:n_beta] = covariance_matrix[1:n_beta, 1:n_beta]
+    cov_full[n_beta+1:n_beta+n_breakpoints, n_beta+1:n_beta+n_breakpoints] = cov_ψ
+    cov_full[end, end] = covariance_matrix[end, end]
+    
+    # Transform cross-covariances
+    # Cov(β, ψ) = Cov(β, θ_ψ) * J^T
+    cov_full[1:n_beta, n_beta+1:n_beta+n_breakpoints] = 
+        covariance_matrix[1:n_beta, n_beta+1:n_beta+n_breakpoints] * J'
+    cov_full[n_beta+1:n_beta+n_breakpoints, 1:n_beta] = 
+        cov_full[1:n_beta, n_beta+1:n_beta+n_breakpoints]'
+    
+    # Cov(ψ, σ) = J * Cov(θ_ψ, log_σ)
+    cov_full[n_beta+1:n_beta+n_breakpoints, end] = 
+        J * covariance_matrix[n_beta+1:n_beta+n_breakpoints, end]
+    cov_full[end, n_beta+1:n_beta+n_breakpoints] = 
+        cov_full[n_beta+1:n_beta+n_breakpoints, end]'
+    
+    # Cov(β, σ) unchanged
+    cov_full[1:n_beta, end] = covariance_matrix[1:n_beta, end]
+    cov_full[end, 1:n_beta] = covariance_matrix[end, 1:n_beta]
+    
+    D_inv = Diagonal(1.0 ./ standard_errors)
+    correlation_matrix = D_inv * cov_full * D_inv
+    
+    # Create model (don't round to integers for continuous data!)
+    ψ_opt_int = round.(Int, ψ_opt_continuous)
     θ_mle = FittedParams(ψ_opt_int, β_opt, σ_opt)
 
     return FittedSegmentModel(
@@ -222,7 +281,7 @@ function fit!(model::SegmentedModel;
         ψ_ci,
         σ_se,
         (σ_ci_lower, σ_ci_upper),
-        covariance_matrix,
+        cov_full,  # Use transformed covariance
         correlation_matrix,
         hess,
         result

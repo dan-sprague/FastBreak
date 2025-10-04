@@ -4,7 +4,9 @@ using Optim
 using LinearAlgebra
 using Printf
 using StatsBase: mean, quantile, std
-using ForwardDiff
+using AdvancedHMC
+using MCMCChains
+using Distributions 
 using JSON
 
 #include("dist.jl")

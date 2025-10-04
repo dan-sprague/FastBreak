@@ -23,16 +23,24 @@ function gradient!(grad, θ, model::SegmentedModel)
 
     sum_sq_residuals = sum(residuals.^2)
 
-    # Gradient w.r.t. β
-    # ∂NLL/∂β[1] = -1/σ² * Σ residuals * 1
-    grad[1] = -sum(residuals) / σ2
+    # Get prior parameters
+    mean_y = mean(model.y)
+    sd_y = std(model.y)
+
+    # Gradient w.r.t. β (likelihood + prior)
+    # Likelihood: ∂NLL/∂β[1] = -1/σ² * Σ residuals * 1
+    # Prior: beta[1] ~ normal(mean_y, sd_y*2), ∂/∂β[1] = (β[1] - mean_y)/(sd_y*2)^2
+    prior_var_intercept = (sd_y * 2)^2
+    grad[1] = -sum(residuals) / σ2 + (β[1] - mean_y) / prior_var_intercept
 
     # ∂NLL/∂β[2] = -1/σ² * Σ residuals * x
-    grad[2] = -sum(residuals .* x) / σ2
+    # Prior: beta[2] ~ normal(0, 10), ∂/∂β[2] = β[2]/100
+    grad[2] = -sum(residuals .* x) / σ2 + β[2] / 100.0
 
     # ∂NLL/∂β[i+2] = -1/σ² * Σ residuals * max(0, x - ψ[i])
+    # Prior: beta[i+2] ~ normal(0, 10), ∂/∂β[i+2] = β[i+2]/100
     for i in 1:model.n_breakpoints
-        grad[i+2] = -sum(residuals .* max.(0, x .- ψ[i])) / σ2
+        grad[i+2] = -sum(residuals .* max.(0, x .- ψ[i])) / σ2 + β[i+2] / 100.0
     end
 
     # Gradient w.r.t. ψ (in ordered space)
@@ -58,8 +66,9 @@ function gradient!(grad, θ, model::SegmentedModel)
     end
 
     # Gradient w.r.t. log_σ
-    # ∂NLL/∂log_σ = n - sum_sq_residuals/σ²
-    grad[end] = n - sum_sq_residuals / σ2
+    # Likelihood: ∂NLL/∂log_σ = n - sum_sq_residuals/σ²
+    # Prior: sigma ~ exponential(10), ∂/∂log_σ[10*σ] = 10*σ
+    grad[end] = n - sum_sq_residuals / σ2 + 10.0 * σ
 
     return grad
 end
