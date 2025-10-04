@@ -10,24 +10,21 @@ function hessian!(hess, θ, model::SegmentedModel)
     n_params = length(θ)
 
     β = θ[1:n_beta]
-    ψ = θ[n_beta+1:n_beta+model.n_breakpoints]
+    θ_ψ = θ[n_beta+1:n_beta+model.n_breakpoints]
+    ψ = transform_to_ordered(θ_ψ)  # Transform to ordered space
     log_σ = θ[end]
     σ = exp(log_σ)
     σ2 = σ^2
 
     x = model.x
-    
+
     # Compute predictions and residuals
-    ŷ = predict(model, θ)
-    residuals = model.y .- ŷ
+    ŷ = predict(model, θ)
+    residuals = model.y .- ŷ
     sum_sq_residuals = sum(residuals.^2)
-    
+
+    # Compute Hessian in the ordered space first
     # Precompute derivatives of prediction w.r.t. parameters
-    # dŷ/dβ[1] = 1
-    # dŷ/dβ[2] = x
-    # dŷ/dβ[i+2] = max(0, x - ψ[i])
-    # dŷ/dψ[i] = -β[i+2] * 𝟙(x > ψ[i])
-    
     dy_dβ = zeros(n, n_beta)
     dy_dβ[:, 1] .= 1.0
     dy_dβ[:, 2] .= x
@@ -40,55 +37,117 @@ function hessian!(hess, θ, model::SegmentedModel)
         indicators = Float64.(x .> ψ[i])
         dy_dψ[:, i] .= -β[i+2] .* indicators
     end
-    
-    fill!(hess, 0.0)
-    
+
+    # Compute Hessian in ordered space
+    hess_ordered = zeros(n_params, n_params)
+
     # Block 1: ∂²NLL/∂β[j]∂β[k] = 1/σ² * Σ (∂ŷ/∂β[j]) * (∂ŷ/∂β[k])
     for j in 1:n_beta
         for k in 1:n_beta
-            hess[j, k] = sum(dy_dβ[:, j] .* dy_dβ[:, k]) / σ2
+            hess_ordered[j, k] = sum(dy_dβ[:, j] .* dy_dβ[:, k]) / σ2
         end
     end
-    
+
     # Block 2: ∂²NLL/∂β[j]∂ψ[k]
     for j in 1:n_beta
         for k in 1:model.n_breakpoints
-            # = 1/σ² * Σ (∂ŷ/∂β[j]) * (∂ŷ/∂ψ[k])
-            hess[j, n_beta + k] = sum(dy_dβ[:, j] .* dy_dψ[:, k]) / σ2
-            
-            # Add second derivative contribution for β[k+2] and ψ[k]
+            hess_ordered[j, n_beta + k] = sum(dy_dβ[:, j] .* dy_dψ[:, k]) / σ2
+
             if j == k + 2
-                # ∂²ŷ/∂β[k+2]∂ψ[k] = -𝟙(x > ψ[k])
                 indicators = Float64.(x .> ψ[k])
-                hess[j, n_beta + k] += sum(residuals .* (-indicators)) / σ2
+                hess_ordered[j, n_beta + k] += sum(residuals .* (-indicators)) / σ2
             end
-            
-            hess[n_beta + k, j] = hess[j, n_beta + k]  # Symmetry
+
+            hess_ordered[n_beta + k, j] = hess_ordered[j, n_beta + k]
         end
     end
-    
+
     # Block 3: ∂²NLL/∂ψ[j]∂ψ[k]
     for j in 1:model.n_breakpoints
         for k in 1:model.n_breakpoints
-            # = 1/σ² * Σ (∂ŷ/∂ψ[j]) * (∂ŷ/∂ψ[k])
-            hess[n_beta + j, n_beta + k] = sum(dy_dψ[:, j] .* dy_dψ[:, k]) / σ2
+            hess_ordered[n_beta + j, n_beta + k] = sum(dy_dψ[:, j] .* dy_dψ[:, k]) / σ2
         end
     end
-    
-    # Block 4: ∂²NLL/∂β[j]∂log_σ = -2/σ² * Σ residuals * (∂ŷ/∂β[j])
+
+    # Block 4: ∂²NLL/∂β[j]∂log_σ
     for j in 1:n_beta
-        hess[j, n_params] = -2.0 / σ2 * sum(residuals .* dy_dβ[:, j])
-        hess[n_params, j] = hess[j, n_params]  # Symmetry
+        hess_ordered[j, n_params] = -2.0 / σ2 * sum(residuals .* dy_dβ[:, j])
+        hess_ordered[n_params, j] = hess_ordered[j, n_params]
     end
-    
-    # Block 5: ∂²NLL/∂ψ[j]∂log_σ = -2/σ² * Σ residuals * (∂ŷ/∂ψ[j])
+
+    # Block 5: ∂²NLL/∂ψ[j]∂log_σ
     for j in 1:model.n_breakpoints
-        hess[n_beta + j, n_params] = -2.0 / σ2 * sum(residuals .* dy_dψ[:, j])
-        hess[n_params, n_beta + j] = hess[n_beta + j, n_params]  # Symmetry
+        hess_ordered[n_beta + j, n_params] = -2.0 / σ2 * sum(residuals .* dy_dψ[:, j])
+        hess_ordered[n_params, n_beta + j] = hess_ordered[n_beta + j, n_params]
     end
-    
-    # Block 6: ∂²NLL/∂(log_σ)² = 2*sum_sq_residuals/σ²
-    hess[n_params, n_params] = 2.0 * sum_sq_residuals / σ2
-    
+
+    # Block 6: ∂²NLL/∂(log_σ)²
+    hess_ordered[n_params, n_params] = 2.0 * sum_sq_residuals / σ2
+
+    # Now transform Hessian to unconstrained space
+    # Build Jacobian matrix J where J[i,j] = ∂ψ[i]/∂θ_ψ[j]
+    J = zeros(model.n_breakpoints, model.n_breakpoints)
+    for i in 1:model.n_breakpoints
+        for j in 1:model.n_breakpoints
+            if j == 1
+                J[i, j] = 1.0  # ∂ψ[i]/∂θ_ψ[1] = 1 for all i
+            elseif j <= i
+                J[i, j] = exp(θ_ψ[j])  # ∂ψ[i]/∂θ_ψ[j] = exp(θ_ψ[j]) for j <= i
+            end
+        end
+    end
+
+    # Copy β and σ blocks (unchanged)
+    hess[1:n_beta, 1:n_beta] .= hess_ordered[1:n_beta, 1:n_beta]
+    hess[n_params, n_params] = hess_ordered[n_params, n_params]
+
+    # Transform ψ-ψ block: H_θψ = J^T * H_ψ * J + second order terms
+    H_ψ = hess_ordered[n_beta+1:n_beta+model.n_breakpoints, n_beta+1:n_beta+model.n_breakpoints]
+
+    # Initialize ψ-ψ block to zeros
+    hess[n_beta+1:n_beta+model.n_breakpoints, n_beta+1:n_beta+model.n_breakpoints] .= 0.0
+
+    # Compute gradient w.r.t. ψ for second order terms
+    grad_ψ = Vector{Float64}(undef, model.n_breakpoints)
+    for i in 1:model.n_breakpoints
+        indicators = Float64.(x .> ψ[i])
+        grad_ψ[i] = β[i+2] / σ2 * sum(residuals .* indicators)
+    end
+
+    # Second order term: ∂²ψ[i]/∂θ_ψ[j]²
+    for i in 2:model.n_breakpoints
+        for j in 2:model.n_breakpoints
+            if i >= j
+                # Add Σ_k (∂L/∂ψ[k]) * (∂²ψ[k]/∂θ_ψ[i]∂θ_ψ[j])
+                # ∂²ψ[k]/∂θ_ψ[i]² = exp(θ_ψ[i]) for k >= i
+                if i == j
+                    hess[n_beta + i, n_beta + j] = sum(grad_ψ[i:end]) * exp(θ_ψ[i])
+                end
+            end
+        end
+    end
+
+    # Add first order term: J^T * H_ψ * J
+    hess[n_beta+1:n_beta+model.n_breakpoints, n_beta+1:n_beta+model.n_breakpoints] .+= J' * H_ψ * J
+
+    # Transform β-ψ blocks
+    for j in 1:n_beta
+        H_βψ = hess_ordered[j, n_beta+1:n_beta+model.n_breakpoints]
+        # H_βψ is a row vector, so J' * H_βψ gives the transformed column
+        transformed = J' * H_βψ
+        hess[n_beta+1:n_beta+model.n_breakpoints, j] .= transformed
+        hess[j, n_beta+1:n_beta+model.n_breakpoints] .= transformed
+    end
+
+    # Transform ψ-σ blocks
+    H_ψσ = hess_ordered[n_beta+1:n_beta+model.n_breakpoints, n_params]
+    transformed_ψσ = J' * H_ψσ
+    hess[n_beta+1:n_beta+model.n_breakpoints, n_params] .= transformed_ψσ
+    hess[n_params, n_beta+1:n_beta+model.n_breakpoints] .= transformed_ψσ
+
+    # Copy β-σ blocks
+    hess[1:n_beta, n_params] .= hess_ordered[1:n_beta, n_params]
+    hess[n_params, 1:n_beta] .= hess_ordered[n_params, 1:n_beta]
+
     return hess
 end

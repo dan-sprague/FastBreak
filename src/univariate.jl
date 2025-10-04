@@ -1,11 +1,45 @@
 """
-    predict(x, θ, n_breakpoints)
+    transform_to_ordered(θ_unconstrained)
 
-Evaluate piecewise linear model at points `x` using parameter vector `θ`.
-
-Parameter vector structure:
-θ = [β₁, β₂, ..., β_{n_breakpoints+2}, ψ₁, ..., ψ_{n_breakpoints}, log(σ)]
+Transform unconstrained breakpoint parameters to ordered breakpoints.
+Uses STAN's ordered parameter transformation:
+- ψ[1] = θ[1] (unconstrained)
+- ψ[i] = ψ[i-1] + exp(θ[i]) for i > 1
 """
+function transform_to_ordered(θ_unconstrained::Vector{Float64})
+    n = length(θ_unconstrained)
+    if n == 0
+        return Float64[]
+    end
+
+    ψ = Vector{Float64}(undef, n)
+    ψ[1] = θ_unconstrained[1]
+    for i in 2:n
+        ψ[i] = ψ[i-1] + exp(θ_unconstrained[i])
+    end
+    return ψ
+end
+
+"""
+    transform_from_ordered(ψ)
+
+Transform ordered breakpoints to unconstrained space.
+Inverse of transform_to_ordered.
+"""
+function transform_from_ordered(ψ::Vector{Float64})
+    n = length(ψ)
+    if n == 0
+        return Float64[]
+    end
+
+    θ = Vector{Float64}(undef, n)
+    θ[1] = ψ[1]
+    for i in 2:n
+        θ[i] = log(ψ[i] - ψ[i-1])
+    end
+    return θ
+end
+
 function predict(model::SegmentedModel, θ::Vector{Float64})
     n_beta = model.n_breakpoints + 2
     n_breakpoints = model.n_breakpoints
@@ -13,16 +47,21 @@ function predict(model::SegmentedModel, θ::Vector{Float64})
     x = model.x
     # Extract parameters
     β = θ[1:n_beta]
-    ψ = θ[n_beta+1:n_beta+n_breakpoints]
-    
+    θ_ψ = θ[n_beta+1:n_beta+n_breakpoints]
+    ψ = transform_to_ordered(θ_ψ)  # Transform to ordered space
+
+    # Clamp breakpoints to valid range
+    xmin, xmax = model.ψ_prior_range
+    ψ = clamp.(ψ, xmin, xmax)
+
     # Compute predictions
     ŷ = fill(β[1], length(x))
     ŷ .+= β[2] .* x
-    
+
     for i in 1:n_breakpoints
         ŷ .+= β[i+2] .* max.(0, x .- ψ[i])
     end
-    
+
     return ŷ
 end
 
@@ -33,48 +72,29 @@ function nll(θ, model::SegmentedModel)
     n_beta = n_breakpoints + 2
 
     β = θ[1:n_beta]
-    ψ = θ[n_beta+1:n_beta+n_breakpoints]
+    θ_ψ = θ[n_beta+1:n_beta+n_breakpoints]
+    ψ = transform_to_ordered(θ_ψ)  # Transform to ordered space
     log_σ = θ[end]
     σ = exp(log_σ)
-    
+
+    # Clamp breakpoints to valid range
+    xmin, xmax = model.ψ_prior_range
+    ψ = clamp.(ψ, xmin, xmax)
+
     # Compute predictions
     y_pred = fill(β[1], n)
     y_pred .+= β[2] .* model.x
     for i in 1:n_breakpoints
         y_pred .+= β[i+2] .* max.(0, model.x .- ψ[i])
     end
-    
+
     # NLL = n*log(σ) + 1/(2σ²)*Σ(residuals²)
     residuals = model.y .- y_pred
     sum_sq_residuals = sum(residuals.^2)
-    
+
     nll = n * log_σ + sum_sq_residuals / (2 * σ^2)
-    
+
     return nll
-end
-
-"""
-    initialize_params(model)
-
-Initialize parameter vector from priors and data.
-"""
-function initialize_params(model::SegmentedModel)
-    n_breakpoints = model.n_breakpoints
-    n_beta = n_breakpoints + 2
-    
-    β_init = Vector{Float64}(undef, n_beta)
-    β_init[1] = mean(model.y)  
-    β_init[2:end] .= rand(model.slope_prior, n_breakpoints + 1) .* 0.1
-    
-    # Initialize breakpoints within valid range
-    ψ_min, ψ_max = model.ψ_prior_range
-    ψ_init = [ψ_min + (ψ_max - ψ_min) * q 
-              for q in range(0.2, 0.8, length=n_breakpoints)]
-    
-    # Initialize log_σ from prior
-    log_σ_init = log(mean(model.σ_prior))
-    
-    return vcat(β_init, ψ_init, log_σ_init)
 end
 
 """
@@ -88,7 +108,7 @@ Fit maximum a posteriori (MAP) estimate for segmented regression model.
 - `show_trace::Bool`: show optimization trace (default: false)
 - `confidence_level::Float64`: confidence level for intervals (default: 0.95)
 """
-function fit!(model::SegmentedModel; 
+function fit!(model::SegmentedModel;
                 max_iter=1000,
                 show_trace=false,
                 confidence_level=0.95)
@@ -99,18 +119,24 @@ function fit!(model::SegmentedModel;
 
     n_beta = n_breakpoints + 2
     n_params = n_beta + n_breakpoints + 1
+
     # Initialize
-    β_init = randn(n_beta) * 0.1
+    β_init = randn(n_beta) * (std(y) / 10)
     β_init[1] = mean(y)
-    ψ_init = if n_breakpoints == 1
+
+    # Initialize breakpoint locations
+    ψ_init_ordered = if n_breakpoints == 1
         [quantile(x, 0.5)]
     else
         [quantile(x, q) for q in range(0.2, 0.8, length=n_breakpoints)]
     end
+
+    # Transform to unconstrained space
+    θ_ψ_init = transform_from_ordered(ψ_init_ordered)
     log_σ_init = log(std(y))
-    
-    params_init = vcat(β_init, ψ_init, log_σ_init)
-    
+
+    params_init = vcat(β_init, θ_ψ_init, log_σ_init)
+
     # Define objective and gradient
     obj(p) = nll(p, model)
 
@@ -121,12 +147,12 @@ function fit!(model::SegmentedModel;
     function hess!(h, p)
         hessian!(h, p, model)
     end
-    
+
     println("Optimizing...")
-    result = optimize(obj, grad!,params_init, Newton(),
+    result = optimize(obj, grad!, hess!, params_init, Newton(),
                      Optim.Options(iterations=max_iter,
                                   show_trace=show_trace))
-    
+
     params_opt = Optim.minimizer(result)
     
     # Compute Hessian at MLE
@@ -160,7 +186,8 @@ function fit!(model::SegmentedModel;
 
     # Extract parameters
     β_opt = params_opt[1:n_beta]
-    ψ_opt_continuous = params_opt[n_beta+1:n_beta+n_breakpoints]
+    θ_ψ_opt = params_opt[n_beta+1:n_beta+n_breakpoints]
+    ψ_opt_continuous = transform_to_ordered(θ_ψ_opt)  # Transform to ordered space
     log_σ_opt = params_opt[end]
     σ_opt = exp(log_σ_opt)
     
@@ -184,7 +211,7 @@ function fit!(model::SegmentedModel;
     σ_ci_upper = σ_opt + z_crit * σ_se
     
     # Create model
-    ψ_opt_int = round.(Int, sort(ψ_opt_continuous))
+    ψ_opt_int = round.(Int, ψ_opt_continuous)  # Already ordered from transformation
     θ_mle = FittedParams(ψ_opt_int, β_opt, σ_opt)
 
     return FittedSegmentModel(

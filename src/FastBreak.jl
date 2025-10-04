@@ -4,6 +4,8 @@ using Optim
 using LinearAlgebra
 using Printf
 using StatsBase: mean, quantile, std
+using ForwardDiff
+using JSON
 
 #include("dist.jl")
 
@@ -94,9 +96,12 @@ include("univariate.jl")
 include("gradient.jl")
 include("hessian.jl")
 include("output.jl")
+include("stan_utils.jl")
 
 
 
-export SegmentedModel, FittedSegmentModel, FittedParams, fit!, predict, print_results
+export SegmentedModel, FittedSegmentModel, FittedParams, fit!, predict, print_results, write_stan_data
 
 end # module FastBreak
+
+
