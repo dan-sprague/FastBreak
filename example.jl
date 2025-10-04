@@ -1,5 +1,4 @@
 using FastBreak
-
 function generate_predictions(x::Vector{Float64}, θ::Vector{Float64}, n_breakpoints::Int)
     n_beta = n_breakpoints + 2
     # Extract parameters
@@ -41,3 +40,4 @@ function example()
     
     return results
 end
+

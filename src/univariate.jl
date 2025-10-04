@@ -109,13 +109,17 @@ function fit!(model::SegmentedModel;
     
     # Define objective and gradient
     obj(p) = nll(p, model)
-    
+
     function grad!(g, p)
         gradient!(g, p, model)
     end
+
+    function hess!(h, p)
+        hessian!(h, p, model)
+    end
     
-    println("Optimizing with LBFGS...")
-    result = optimize(obj, grad!, params_init, LBFGS(),
+    println("Optimizing...")
+    result = optimize(obj, grad!,params_init, Newton(),
                      Optim.Options(iterations=max_iter,
                                   show_trace=show_trace))
     
