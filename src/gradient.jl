@@ -4,50 +4,46 @@
 
 Compute gradient of negative log posterior with respect to θ in-place.
 """
-function gradient!(grad::Vector{Float64}, θ::Vector{Float64}, model::SegmentedModel)
+function gradient!(grad, θ, model::SegmentedModel)
     n = length(model.y)
-    n_breakpoints = model.n_breakpoints
-    n_beta = n_breakpoints + 2
-    
+    n_beta = model.n_breakpoints + 2
+
     β = θ[1:n_beta]
-    ψ = θ[n_beta+1:n_beta+n_breakpoints]
+    ψ = θ[n_beta+1:n_beta+model.n_breakpoints]
     log_σ = θ[end]
     σ = exp(log_σ)
     σ2 = σ^2
+
+    x = model.x
     
-    ŷ = predict(model.x, θ, n_breakpoints)
-    residuals = model.y .- ŷ
+    # Compute predictions and residuals
+    ŷ = predict(model, θ)
+    residuals = model.y .- ŷ
+
     sum_sq_residuals = sum(residuals.^2)
     
-    # Gradient w.r.t. β (likelihood + prior)
-    grad[1] = -sum(residuals) / σ2 + (β[1] - model.intercept_prior.μ) / model.intercept_prior.σ^2
-    grad[2] = -sum(residuals .* model.x) / σ2 + β[2] / model.slope_prior.σ^2
+    # Gradient w.r.t. β
+    # ∂NLL/∂β[1] = -1/σ² * Σ residuals * 1
+    grad[1] = -sum(residuals) / σ2
     
-    for i in 1:n_breakpoints
-        grad[i+2] = -sum(residuals .* max.(0, model.x .- ψ[i])) / σ2 + β[i+2] / model.slope_prior.σ^2
+    # ∂NLL/∂β[2] = -1/σ² * Σ residuals * x
+    grad[2] = -sum(residuals .* x) / σ2
+    
+    # ∂NLL/∂β[i+2] = -1/σ² * Σ residuals * max(0, x - ψ[i])
+    for i in 1:model.n_breakpoints
+        grad[i+2] = -sum(residuals .* max.(0, x .- ψ[i])) / σ2
     end
     
-    # Gradient w.r.t. ψ (uniform prior contributes 0)
-    for i in 1:n_breakpoints
-        indicators = Float64.(model.x .> ψ[i])
+    # Gradient w.r.t. ψ
+    # ∂NLL/∂ψ[i] = β[i+2]/σ² * Σ residuals * 𝟙(x > ψ[i])
+    for i in 1:model.n_breakpoints
+        indicators = Float64.(x .> ψ[i])
         grad[n_beta + i] = β[i+2] / σ2 * sum(residuals .* indicators)
     end
     
-
-    grad_likelihood = n - sum_sq_residuals / σ2
-
-    # Prior gradient (for Exponential)
-    if model.σ_prior isa Exponential
-        θ_prior = mean(model.σ_prior)  # scale parameter
-        grad_prior = -1.0 + σ / θ_prior
-    else  # Truncated distribution
-        # Use finite differences for complex distributions
-        ε = 1e-8
-        grad_prior = (nll(vcat(θ[1:end-1], log_σ + ε), model) -
-                     nll(vcat(θ[1:end-1], log_σ - ε), model)) / (2ε) - grad_likelihood
-    end
-
-    grad[end] = grad_likelihood + grad_prior
+    # Gradient w.r.t. log_σ
+    # ∂NLL/∂log_σ = n - sum_sq_residuals/σ²
+    grad[end] = n - sum_sq_residuals / σ2
     
     return grad
 end

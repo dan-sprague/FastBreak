@@ -3,9 +3,7 @@ module FastBreak
 using Optim
 using LinearAlgebra
 using Printf
-using StatsBase: mean as stats_mean 
-using Distributions
-
+using StatsBase: mean, quantile, std
 
 #include("dist.jl")
 
@@ -18,9 +16,6 @@ struct SegmentedModel
     x::Vector{Float64}
     y::Vector{Float64}
     n_breakpoints::Int
-    slope_prior::Normal
-    intercept_prior::Normal
-    σ_prior::Exponential  # Prior on σ
     ψ_prior_range::Tuple{Float64, Float64}   # Uniform prior bounds for breakpoints
 end
 
@@ -42,9 +37,6 @@ function SegmentedModel(
     x::Vector{<:Real}, 
     y::Vector{<:Real},
     n_breakpoints::Int;
-    slope_prior::Normal=Normal(0, 1),
-    intercept_prior::Normal=Normal(0, 10),
-    σ_prior::Exponential=Exponential(1.0),
     ψ_prior_range::Union{Nothing, Tuple{<:Real, <:Real}}=nothing
 )
     # Default ψ_prior_range to data range
@@ -56,9 +48,6 @@ function SegmentedModel(
         Float64.(x),
         Float64.(y),
         n_breakpoints,
-        slope_prior,
-        intercept_prior,
-        σ_prior,
         Float64.(ψ_prior_range)
     )
 end
@@ -72,8 +61,9 @@ struct FittedParams
     σ::Float64
 end
 
-struct FitResults
-    model::FittedParams
+
+struct FittedSegmentModel
+    θ::FittedParams
     β_se::Vector{Float64}
     β_ci::Matrix{Float64}
     ψ_se::Vector{Float64}
@@ -86,6 +76,20 @@ struct FitResults
     optim_result::Optim.MultivariateOptimizationResults
 end
 
+ψ(x::FittedParams) = x.ψ
+β(x::FittedParams) = x.β
+σ(x::FittedParams) = x.σ
+
+function (m::FittedSegmentModel)(x)
+    y = fill(β(m.θ)[1], length(x))  # Intercept
+    y .+= β(m.θ)[2] .* x             # First slope
+    
+    for i in 1:length(ψ(m.θ))
+        y .+= β(m.θ)[i+2] .* max.(0, x .- ψ(m.θ)[i])
+    end
+    return y
+end
+
 include("univariate.jl")
 include("gradient.jl")
 include("hessian.jl")
@@ -93,6 +97,6 @@ include("output.jl")
 
 
 
-export SegmentedModel, FitResults, FittedParams, fit!, predict, print_results
+export SegmentedModel, FittedSegmentModel, FittedParams, fit!, predict, print_results
 
 end # module FastBreak

@@ -6,9 +6,11 @@ Evaluate piecewise linear model at points `x` using parameter vector `θ`.
 Parameter vector structure:
 θ = [β₁, β₂, ..., β_{n_breakpoints+2}, ψ₁, ..., ψ_{n_breakpoints}, log(σ)]
 """
-function predict(x::Vector{Float64}, θ::Vector{Float64}, n_breakpoints::Int)
-    n_beta = n_breakpoints + 2
-    
+function predict(model::SegmentedModel, θ::Vector{Float64})
+    n_beta = model.n_breakpoints + 2
+    n_breakpoints = model.n_breakpoints
+
+    x = model.x
     # Extract parameters
     β = θ[1:n_beta]
     ψ = θ[n_beta+1:n_beta+n_breakpoints]
@@ -24,49 +26,31 @@ function predict(x::Vector{Float64}, θ::Vector{Float64}, n_breakpoints::Int)
     return ŷ
 end
 
-"""
-    nll(θ, model)
 
-Negative log posterior for parameter vector θ and model.
-"""
-function nll(θ::Vector{Float64}, model::SegmentedModel)
+function nll(θ, model::SegmentedModel)
     n = length(model.y)
     n_breakpoints = model.n_breakpoints
     n_beta = n_breakpoints + 2
-    
+
     β = θ[1:n_beta]
     ψ = θ[n_beta+1:n_beta+n_breakpoints]
     log_σ = θ[end]
     σ = exp(log_σ)
     
-    # Check if breakpoints are within prior bounds (for safety)
-    ψ_min, ψ_max = model.ψ_prior_range
-    if any(ψ .< ψ_min) || any(ψ .> ψ_max)
-        return Inf  # Outside valid range
+    # Compute predictions
+    y_pred = fill(β[1], n)
+    y_pred .+= β[2] .* model.x
+    for i in 1:n_breakpoints
+        y_pred .+= β[i+2] .* max.(0, model.x .- ψ[i])
     end
     
-    ŷ = predict(model.x, θ, n_breakpoints)
-    
-    residuals = model.y .- ŷ
+    # NLL = n*log(σ) + 1/(2σ²)*Σ(residuals²)
+    residuals = model.y .- y_pred
     sum_sq_residuals = sum(residuals.^2)
     
-    # Negative log likelihood
-    nll_value = n * log_σ + sum_sq_residuals / (2 * σ^2)
+    nll = n * log_σ + sum_sq_residuals / (2 * σ^2)
     
-    # Prior on β (slopes and intercept)
-    prior_β_slopes = sum(β[2:end].^2) / (2 * model.slope_prior.σ^2)
-    prior_β_intercept = (β[1] - model.intercept_prior.μ)^2 / (2 * model.intercept_prior.σ^2)
-    
-    # Prior on ψ (uniform over range - constant, doesn't affect optimization)
-    # -log p(ψ) = log(ψ_max - ψ_min) for each breakpoint (constant)
-    
-    # Prior on σ (transform from prior on σ to prior on log_σ)
-    # p(log_σ) = p(σ) * σ where σ = exp(log_σ)
-    # For Exponential(λ): p(σ) = λ exp(-λσ)
-    # -log p(log_σ) = -log(λ) - log(σ) + λσ = -log(λ) - log_σ + λ exp(log_σ)
-    prior_σ = -logpdf(model.σ_prior, σ) - log_σ  # Jacobian adjustment
-    
-    return nll_value + prior_β_slopes + prior_β_intercept + prior_σ
+    return nll
 end
 
 """
@@ -105,103 +89,107 @@ Fit maximum a posteriori (MAP) estimate for segmented regression model.
 - `confidence_level::Float64`: confidence level for intervals (default: 0.95)
 """
 function fit!(model::SegmentedModel; 
-              max_iter::Int=1000,
-              show_trace::Bool=false,
-              confidence_level::Float64=0.95)
+                max_iter=1000,
+                show_trace=false,
+                confidence_level=0.95)
     
+    x = model.x
+    y = model.y
     n_breakpoints = model.n_breakpoints
+
     n_beta = n_breakpoints + 2
     n_params = n_beta + n_breakpoints + 1
+    # Initialize
+    β_init = randn(n_beta) * 0.1
+    β_init[1] = mean(y)
+    ψ_init = [quantile(x, q) for q in range(0.2, 0.8, length=n_breakpoints)]
+    log_σ_init = log(std(y))
     
-    # Initialize parameters
-    θ_init = initialize_params(model)
+    params_init = vcat(β_init, ψ_init, log_σ_init)
     
     # Define objective and gradient
-    obj(θ) = nll(θ, model)
-
-    function grad!(g, θ)
-        gradient!(g, θ, model)
+    obj(p) = nll(p, model)
+    
+    function grad!(g, p)
+        gradient!(g, p, model)
     end
-
-
-    println("Optimizing with analytical gradient (MAP estimation)...")
-    result = optimize(obj, grad!, θ_init, LBFGS(),
+    
+    println("Optimizing with LBFGS...")
+    result = optimize(obj, grad!, params_init, LBFGS(),
                      Optim.Options(iterations=max_iter,
                                   show_trace=show_trace))
     
-    θ_opt = Optim.minimizer(result) 
+    params_opt = Optim.minimizer(result)
     
-    # Compute Hessian at MAP estimate 
-    println("Computing analytical Hessian at MAP estimate...")
+    # Compute Hessian at MLE
+    println("Computing analytical Hessian...")
     hess = zeros(n_params, n_params)
-    hessian!(hess, θ_opt, model)
+    hessian!(hess, params_opt, model)
     
-    # Approximate posterior covariance = inverse Hessian
-    posterior_info = hess
+    # Fisher Information = Hessian (for MLE)
+    fisher_info = hess
     
     # Check positive definiteness
-    eigvals_hess = eigvals(posterior_info)
+    eigvals_hess = eigvals(fisher_info)
     if any(eigvals_hess .<= 1e-10)
         @warn "Hessian is not positive definite. Using regularization."
         println("Min eigenvalue: ", minimum(eigvals_hess))
-        posterior_info = posterior_info + I * 1e-6
+        # Add small diagonal regularization
+        fisher_info = fisher_info + I * 1e-6
     end
     
-    # Covariance matrix (approximate posterior covariance)
-    covariance_matrix = inv(posterior_info)
+    covariance_matrix = inv(fisher_info)
     
-    # Standard errors
-    se = sqrt.(abs.(diag(covariance_matrix)))
+    standard_errors = sqrt.(abs.(diag(covariance_matrix)))
     
-    # Confidence intervals
-    z = quantile(Normal(0, 1), 0.5 + confidence_level / 2)
-    
-    β_se = se[1:n_beta]
-    β_ci = hcat(θ_opt[1:n_beta] .- z .* β_se, θ_opt[1:n_beta] .+ z .* β_se)
-    
-    ψ_se = se[n_beta+1:n_beta+n_breakpoints]
-    ψ_ci = hcat(θ_opt[n_beta+1:n_beta+n_breakpoints] .- z .* ψ_se,
-                θ_opt[n_beta+1:n_beta+n_breakpoints] .+ z .* ψ_se)
-    
-    # For log_σ, transform back to σ scale using delta method
-    log_σ_opt = θ_opt[end]
-    log_σ_se = se[end]
-    σ_opt = exp(log_σ_opt)
-    σ_se = σ_opt * log_σ_se  # Delta method
-    σ_ci = (σ_opt - z * σ_se, σ_opt + z * σ_se)
-    
-    # Correlation matrix
-    D_inv = Diagonal(1.0 ./ se)
+    D_inv = Diagonal(1.0 ./ standard_errors)
     correlation_matrix = D_inv * covariance_matrix * D_inv
     
-    fitted_params = FittedParams(
-        Int.(round.(sort(θ_opt[n_beta+1:n_beta+n_breakpoints]))),
-        θ_opt[1:n_beta],
-        σ_opt
-    )
+    z_crit = 1.96  # Approx for 95% CI
+    if confidence_level != 0.95
+        throw(ArgumentError("Only 0.95 confidence level is currently supported teehee"))
+    end
+
+    # Extract parameters
+    β_opt = params_opt[1:n_beta]
+    ψ_opt_continuous = params_opt[n_beta+1:n_beta+n_breakpoints]
+    log_σ_opt = params_opt[end]
+    σ_opt = exp(log_σ_opt)
     
-    return FitResults(
-        fitted_params,
+    # Standard errors
+    β_se = standard_errors[1:n_beta]
+    ψ_se = standard_errors[n_beta+1:n_beta+n_breakpoints]
+    log_σ_se = standard_errors[end]
+    
+    # Confidence intervals
+    β_ci = zeros(2, n_beta)
+    β_ci[1, :] = β_opt .- z_crit .* β_se
+    β_ci[2, :] = β_opt .+ z_crit .* β_se
+    
+    ψ_ci = zeros(2, n_breakpoints)
+    ψ_ci[1, :] = ψ_opt_continuous .- z_crit .* ψ_se
+    ψ_ci[2, :] = ψ_opt_continuous .+ z_crit .* ψ_se
+    
+    # σ using delta method
+    σ_se = σ_opt * log_σ_se
+    σ_ci_lower = σ_opt - z_crit * σ_se
+    σ_ci_upper = σ_opt + z_crit * σ_se
+    
+    # Create model
+    ψ_opt_int = round.(Int, sort(ψ_opt_continuous))
+    θ_mle = FittedParams(ψ_opt_int, β_opt, σ_opt)
+
+    return FittedSegmentModel(
+        θ_mle,
         β_se,
         β_ci,
         ψ_se,
         ψ_ci,
         σ_se,
-        σ_ci,
+        (σ_ci_lower, σ_ci_upper),
         covariance_matrix,
         correlation_matrix,
         hess,
         result
     )
-end
-
-"""
-    predict(model::FittedParams, x)
-
-Predict using fitted model.
-"""
-function predict(fitted::FittedParams, x::Vector{<:Real})
-    n_breakpoints = length(fitted.ψ)
-    θ = vcat(fitted.β, Float64.(fitted.ψ), log(fitted.σ))
-    return predict(Float64.(x), θ, n_breakpoints)
 end
