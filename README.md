@@ -18,8 +18,8 @@ FastBreak fits piecewise linear (segmented) regression models with an arbitrary 
 Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau)
 
 <p align="center">
-  <img src="img/population_growth_1.png" alt="Population Growth 1" width="45%"/>
-  <img src="img/population_growth_2.png" alt="Population Growth 2" width="45%"/>
+  <img src="https://github.com/dan-sprague/FastBreak/img/population_growth_1.png" alt="Population Growth 1" width="45%"/>
+  <img src="https://github.com/dan-sprague/FastBreak/img/population_growth_2.png" alt="Population Growth 2" width="45%"/>
 </p>
 
 ## Installation
