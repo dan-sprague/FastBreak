@@ -52,7 +52,7 @@ using FastBreak
 
 # Generate synthetic data
 x = collect(0.0:100.0)
-true_breakpoints = [30, 70]
+true_breakpoints = [31, 69]
 true_β = [10.0, 0.5, -1.0, 0.8]
 true_σ = 3.0
 
