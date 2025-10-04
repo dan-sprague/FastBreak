@@ -18,14 +18,15 @@ MLE fit works well for 1-3 break points. Bayesian sampling required for more com
 ## Use Case
 
 ### Biology 
-Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau)
+Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau) can be done with quick MLE fit.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_1.png" alt="Population Growth 1" width="45%"/>
   <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_2.png" alt="Population Growth 2" width="45%"/>
 </p>
 
-However, this approach can break down with complex functions, particularly if changepoints are closely spaced. 
+However, more complex functions with closely spaced breakpoints require more complex fitting. 
+
 <p align = "center">
 <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_bayes.png" alt="Population Growth 1" width="90%"/>
 </p>
