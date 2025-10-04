@@ -84,16 +84,15 @@ function hessian!(hess::Matrix{Float64}, θ::Vector{Float64}, model::SegmentedMo
     
     # Block 6: ∂²/∂(log_σ)²
     hess_likelihood = 2.0 * sum_sq_residuals / σ2
-    
-    # Add prior contribution
-    # For Exponential(λ): ∂²/∂log_σ² [λσ - log_σ] = λσ
+
+
     if model.σ_prior isa Exponential
-        λ = 1.0 / mean(model.σ_prior)
-        hess_prior = λ * σ
+        θ_prior = mean(model.σ_prior)  # scale parameter
+        hess_prior = σ / θ_prior
     else
         hess_prior = 0.0  # Approximate for other distributions
     end
-    
+
     hess[n_params, n_params] = hess_likelihood + hess_prior
     
     return hess

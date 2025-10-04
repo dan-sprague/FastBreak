@@ -33,23 +33,20 @@ function gradient!(grad::Vector{Float64}, θ::Vector{Float64}, model::SegmentedM
         grad[n_beta + i] = β[i+2] / σ2 * sum(residuals .* indicators)
     end
     
-    # Gradient w.r.t. log_σ (likelihood + prior)
-    # From likelihood: n - sum_sq_residuals / σ²
-    # From prior on σ with Jacobian: -1 + derivative of -logpdf w.r.t. log_σ
-    # For Exponential(λ): ∂/∂log_σ [λσ - log_σ] = λσ - 1
+
     grad_likelihood = n - sum_sq_residuals / σ2
-    
+
     # Prior gradient (for Exponential)
     if model.σ_prior isa Exponential
-        λ = 1.0 / mean(model.σ_prior)
-        grad_prior = λ * σ - 1.0
+        θ_prior = mean(model.σ_prior)  # scale parameter
+        grad_prior = -1.0 + σ / θ_prior
     else  # Truncated distribution
         # Use finite differences for complex distributions
         ε = 1e-8
-        grad_prior = (nll(vcat(θ[1:end-1], log_σ + ε), model) - 
+        grad_prior = (nll(vcat(θ[1:end-1], log_σ + ε), model) -
                      nll(vcat(θ[1:end-1], log_σ - ε), model)) / (2ε) - grad_likelihood
     end
-    
+
     grad[end] = grad_likelihood + grad_prior
     
     return grad

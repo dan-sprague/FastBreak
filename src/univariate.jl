@@ -116,29 +116,16 @@ function fit!(model::SegmentedModel;
     # Initialize parameters
     θ_init = initialize_params(model)
     
-    # Set up bounds for constrained optimization
-    ψ_min, ψ_max = model.ψ_prior_range
-    lower = vcat(
-        fill(-Inf, n_beta),              # β unbounded
-        fill(ψ_min, n_breakpoints),      # ψ within prior range
-        -Inf                              # log_σ unbounded (but σ > 0)
-    )
-    upper = vcat(
-        fill(Inf, n_beta),
-        fill(ψ_max, n_breakpoints),
-        Inf
-    )
-    
     # Define objective and gradient
     obj(θ) = nll(θ, model)
-    
+
     function grad!(g, θ)
         gradient!(g, θ, model)
     end
-    
-    # Optimize with bounds (MAP estimation)
-    println("Optimizing with analytical gradient (MAP estimation with bounds)...")
-    result = optimize(obj, grad!, lower, upper, θ_init, Fminbox(LBFGS()),
+
+
+    println("Optimizing with analytical gradient (MAP estimation)...")
+    result = optimize(obj, grad!, θ_init, LBFGS(),
                      Optim.Options(iterations=max_iter,
                                   show_trace=show_trace))
     
@@ -155,7 +142,7 @@ function fit!(model::SegmentedModel;
     # Check positive definiteness
     eigvals_hess = eigvals(posterior_info)
     if any(eigvals_hess .<= 1e-10)
-        @error "Hessian is not positive definite. Using regularization."
+        @warn "Hessian is not positive definite. Using regularization."
         println("Min eigenvalue: ", minimum(eigvals_hess))
         posterior_info = posterior_info + I * 1e-6
     end

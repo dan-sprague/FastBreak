@@ -16,9 +16,9 @@ function example()
     # Create model with data and priors
     model = SegmentedModel(
         x, y_noisy, n_breakpoints,
-        slope_prior=Normal(0, 1),
-        intercept_prior=Normal(0, 10),
-        σ_prior=Exponential(3.0),           # Prior on σ
+        slope_prior=Normal(0, 100),
+        intercept_prior=Normal(0, 100),
+        σ_prior=Exponential(5.0),           # Prior on σ
         ψ_prior_range=(0.0, 100.0)          # Uniform prior on breakpoints
     )
     
@@ -29,6 +29,6 @@ function example()
 end
 
 
-print_results(example())
+[print_results(example()) for i in 1:100]
 
 
