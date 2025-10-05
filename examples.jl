@@ -96,7 +96,8 @@ function plot_mcmc_results(model::SegmentedModel, chain; n_plot_points=200, lege
 
     scatter!(p, ψ_mean, breakpoint_y,
              label="Posterior Breakpoints", ms=5, alpha=1.0,markershape=:circle,
-             markercolor=:black, markerstrokecolor=:crimson,
+             linewidth=1.5,
+             markercolor=:black,
              xerror=1.96 .* ψ_se)
 
     xlabel!(p, "x")
