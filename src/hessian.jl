@@ -1,3 +1,9 @@
+# ======================= NOTE ===================================
+# This hessian was derived by CLAUDE because of its complexity.
+# It has been verified against finite difference approximations.
+# ================================================================
+
+
 
 """
     hessian!(hess, θ, model)
