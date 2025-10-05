@@ -87,7 +87,7 @@ function plot_mcmc_results(model::SegmentedModel, chain; n_plot_points=200, lege
     breakpoint_y = vec(mean(breakpoint_y_samples, dims=2))
 
     # Create the plot
-    p = scatter(model.x, model.y, label="Data", alpha=0.5, legend=legend)
+    p = scatter(model.x, model.y, label="Data", alpha=1.0, legend=legend,color=:black)
 
     plot!(p, x_plot, y_mean,
           ribbon=(y_mean .- lower, upper .- y_mean),
@@ -95,7 +95,7 @@ function plot_mcmc_results(model::SegmentedModel, chain; n_plot_points=200, lege
           color = palette(:default)[4],linewidth = 1.5)
 
     scatter!(p, ψ_mean, breakpoint_y,
-             label="Posterior Breakpoints", ms=5, alpha=1.0,color=:black,
+             label="Posterior Breakpoints", ms=5, alpha=1.0,color=:black,mc = palette(:default)[4],msw=2,
              xerror=1.96 .* ψ_se)
 
     xlabel!(p, "x")
@@ -212,7 +212,7 @@ dt = 1.0
 
 # Trajectory 1: Starting from u0=6
 println("\nSimulating trajectory 1 (u0=6)...")
-t1, u1 = simulate_population!(p, 6, tspan, dt)
+t1, u1 = simulate_population!(p, 10, tspan, dt)
 model1 = SegmentedModel(collect(t1), u1, 1)
 
 println("Running MCMC (2000 samples, 1000 warmup)...")
@@ -223,7 +223,7 @@ title!(p1, "Population Growth")
 
 # Trajectory 2: Starting from u0=2
 println("\nSimulating trajectory 2 (u0=2)...")
-t2, u2 = simulate_population!(p, 2, tspan, dt)
+t2, u2 = simulate_population!(p, 1, tspan, dt)
 model2 = SegmentedModel(collect(t2), u2, 2)
 
 println("Running MCMC (2000 samples, 1000 warmup)...")
