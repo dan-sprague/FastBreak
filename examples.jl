@@ -95,7 +95,8 @@ function plot_mcmc_results(model::SegmentedModel, chain; n_plot_points=200, lege
           color = palette(:default)[4],linewidth = 1.5)
 
     scatter!(p, ψ_mean, breakpoint_y,
-             label="Posterior Breakpoints", ms=5, alpha=1.0,
+             label="Posterior Breakpoints", ms=5, alpha=1.0,markershape=:square,
+             markercolor=:black, markerstrokecolor=palette(:default)[4],
              xerror=1.96 .* ψ_se)
 
     xlabel!(p, "x")
@@ -219,7 +220,7 @@ println("Running MCMC (2000 samples, 1000 warmup)...")
 @time chain1 = sample_mcmc(model1, n_samples=2000, n_adapts=1000)
 
 p1 = plot_mcmc_results(model1, chain1; legend=false)
-title!(p1, "Population Growth (u₀=6, 1 breakpoint)")
+title!(p1, "Population Growth")
 
 # Trajectory 2: Starting from u0=2
 println("\nSimulating trajectory 2 (u0=2)...")
@@ -230,11 +231,11 @@ println("Running MCMC (2000 samples, 1000 warmup)...")
 @time chain2 = sample_mcmc(model2, n_samples=2000, n_adapts=1000)
 
 p2 = plot_mcmc_results(model2, chain2; legend=false)
-title!(p2, "Population Growth (u₀=2, 2 breakpoints)")
+title!(p2, "")
 
 # Combine plots
 println("\nSaving population growth plots...")
-plot(p1, p2, layout=@layout([a; b]), size=(600, 800), dpi=600)
+plot(p1, p2, layout=@layout([a; b]), size=(600, 400), dpi=600)
 savefig("img/population_growth_mcmc.svg")
 println("Saved to img/population_growth_mcmc.svg")
 
