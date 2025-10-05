@@ -1,6 +1,8 @@
 # FastBreak.jl
 
-No frills Julia package for fast univariate (for now) segmented regression with an arbitrary but predefined number of breakpoints.
+No frills Julia package for fast univariate (for now) segmented regression with an arbitrary but predefined number of breakpoints. Useful when knowing when data behavior changes, and statistical questions about timing are important.
+
+i.e., when did my population stop growing in treatment group A compared to group B?
 
 ## Overview
 
