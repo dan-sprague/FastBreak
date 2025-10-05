@@ -18,12 +18,14 @@ MLE fit works well for 1-3 break points. Bayesian sampling required for more com
 ## Use Case
 
 ### Biology 
-Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau) can be done with quick MLE fit.
+Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau) can be calculated in fractions of a second. Hypothesis testing on breakpoints can be performed using the Wald test. 95% CI are reported for the slopes and breakpoint locations.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_1.png" alt="Population Growth 1" width="45%"/>
   <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_2.png" alt="Population Growth 2" width="45%"/>
 </p>
+
+### Complicated functions 
 
 However, more complex functions with closely spaced breakpoints require more complex fitting. FastBreak utilizes its handwritten gradient and the AdvancedHMC.jl library to perform ultrafast Bayesian inference. FastBreak fits about 3X faster than an equivalent Stan model. 
 
