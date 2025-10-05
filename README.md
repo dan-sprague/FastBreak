@@ -2,26 +2,6 @@
 
 Fast, bayesian detection of breakpoints in univariate time series data. Envisioned for biologists interested in asking: what is the probability that population A and B reached plateau growth phase at the same time, controlling for growth rate? Statistical inference can also be performed on slopes (growth rates)
 
-
-## Method Overview
-
-FastBreak fits piecewise linear regression models with an arbitrary number of breakpoints using a fast MCMC sampler (< 1s for 2000 samples on hundreds of observations). All parameters are estimated **jointly** rather than in an iterative fashion. The package uses a hardcoded logposterior gradient to provide posterior samples in the blink of an eye. An initial MAP estimate is performed with Newton's method (Hessian derived with the assistance of Claude, because, well, no thanks!). 
-
-### Why Bayes?
-
-Standard optimization (MLE/MAP) performed well on simple growth curves, however that approach fails catastrophically on sine-like and more complex data, likely due to vanishing gradients and kinks in the loss induced by the breakpoints. R's `segmented` library uses an iterative fitting procedure however the hope for this library was for joint optimization of all parameters using gradient decent.
-
-Bayesian sampling appears to better explore the solution space, leading optimal solutions even though the gradient optimization is still there.
-
-## Features
-
-MLE fit works well for 1-3 break points. Bayesian sampling required for more complex functions (sine)
-
-- **Multiple breakpoints**: Fit models with any number of breakpoints
-- **Fast optimization**: Analytical gradients and Hessians for Newton's method
-- **Statistical inference**: Standard errors, confidence intervals, and correlation matrices on breakpoints and slopes. 
-- **Simple API**: Intuitive interface for model specification and fitting
-
 ## Use Case
 
 ### Biology 
@@ -38,6 +18,27 @@ However, more complex functions with closely spaced breakpoints require more com
 <p align = "center">
 <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/mcmc_results.png" alt="Population Growth 1" width="90%"/>
 </p>
+
+
+## Method Overview
+
+FastBreak fits piecewise linear regression models with an arbitrary number of breakpoints using a fast MCMC sampler (< 1s for 2000 samples on hundreds of observations). All parameters are estimated **jointly** rather than in an iterative fashion. The package uses a hardcoded logposterior gradient to provide posterior samples in the blink of an eye. An initial MAP estimate is performed with Newton's method (Hessian derived with the assistance of Claude, because, well, no thanks!). 
+
+### Why Bayes?
+
+Standard optimization (MLE/MAP) performed well on simple growth curves, however that approach fails catastrophically on sine-like and more complex data, likely due to vanishing gradients and kinks in the loss induced by the breakpoints. R's `segmented` library uses an iterative fitting procedure however the hope for this library was for joint optimization of all parameters using gradient decent.
+
+Bayesian sampling appears to better explore the solution space, leading optimal solutions even though the gradient optimization is still there.
+
+## Features
+
+Full Bayesian posterior for inference on generated and derived statistics!
+
+- **Multiple breakpoints**: Fit models with any number of breakpoints
+- **Fast optimization**: Analytical gradients and Hessians for Newton's method
+- **Statistical inference**: Standard errors, confidence intervals, and correlation matrices on breakpoints and slopes. 
+- **Simple API**: Intuitive interface for model specification and fitting
+
 
 ## Installation
 
