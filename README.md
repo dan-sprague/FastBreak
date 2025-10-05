@@ -1,12 +1,17 @@
 # FastBreak.jl
 
-No frills Julia package for fast univariate (for now) segmented regression with an arbitrary but predefined number of breakpoints. Useful when knowing when data behavior changes, and statistical questions about timing are important.
+Fast, bayesian detection of breakpoints in univariate time series data. Envisioned for biologists interested in asking: what is the probability that population A and B reached plateau growth phase at the same time, controlling for growth rate? Statistical inference can also be performed on slopes (growth rates)
 
-i.e., when did my population stop growing in treatment group A compared to group B?
 
-## Overview
+## Method Overview
 
-FastBreak fits piecewise linear (segmented) regression models with an arbitrary number of breakpoints using maximum likelihood estimation OR MCMC posterior estimation. The package uses handrolled gradients and hessians to optimize using Newton's method, along with standard errors and confidence intervals for all parameters.
+FastBreak fits piecewise linear regression models with an arbitrary number of breakpoints using a fast MCMC sampler (< 1s for 2000 samples on hundreds of observations). All parameters are estimated **jointly** rather than in an iterative fashion. The package uses a hardcoded logposterior gradient to provide posterior samples in the blink of an eye. An initial MAP estimate is performed with Newton's method (Hessian derived with the assistance of Claude, because, well, no thanks!). 
+
+### Why Bayes?
+
+Standard optimization (MLE/MAP) performed well on simple growth curves, however that approach fails catastrophically on sine-like and more complex data, likely due to vanishing gradients and kinks in the loss induced by the breakpoints. R's `segmented` library uses an iterative fitting procedure however the hope for this library was for joint optimization of all parameters using gradient decent.
+
+Bayesian sampling appears to better explore the solution space, leading optimal solutions even though the gradient optimization is still there.
 
 ## Features
 
@@ -23,8 +28,7 @@ MLE fit works well for 1-3 break points. Bayesian sampling required for more com
 Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau) can be calculated in fractions of a second. Hypothesis testing on breakpoints can be performed using the Wald test. 95% CI are reported for the slopes and breakpoint locations.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_1.png" alt="Population Growth 1" width="45%"/>
-  <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_2.png" alt="Population Growth 2" width="45%"/>
+  <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_mcmc.png" alt="Population Growth 1" width="90%"/>
 </p>
 
 ### Complicated functions 

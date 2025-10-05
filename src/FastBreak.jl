@@ -97,8 +97,9 @@ function (m::FittedSegmentModel)(x)
     return y
 end
 
-include("logposterior.jl")
 include("gradient.jl")
+include("hessian.jl")
+include("logposterior.jl")
 include("output.jl")
 include("mcmc.jl")
 
