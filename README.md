@@ -2,7 +2,7 @@
 
 Fast detection of breakpoints in univariate time series data. Envisioned for biologists interested in asking: what is the probability that population A and B reached plateau growth phase at the same time, controlling for growth rate? Statistical inference can also be performed on slopes (growth rates)
 
-## Use Case
+## Uses
 
 ### Biology 
 Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau) can be calculated in fractions of a second. Hypothesis testing on breakpoints can be performed intuitively using either the full posterior (best) or Wald test.
@@ -18,7 +18,7 @@ Simple curves such as these can be fit nearly instantaneously.
 FastBreak utilizes its hardcoded gradient and the `AdvancedHMC.jl` library to perform ultrafast Bayesian inference. FastBreak fits about 3X faster than an equivalent Stan model. Importantly, FastBreak performs either point estimate fitting (MAP) or MCMC. 
 
 <p align = "center">
-<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc4.png" alt="Population Growth 1" width="600px"/>
+<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc5.png" alt="Population Growth 1" width="600px"/>
 </p>
 
 As shown above, the MAP fit looks enticing and in this case is a good fit against ground truth. However, the full Bayesian sampling indicates that the normality assumptions are probably not true. The full posterior estimate provides the most accurate picture of uncertainty for inference.
