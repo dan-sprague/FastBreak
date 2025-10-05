@@ -87,7 +87,7 @@ function plot_mcmc_results(model::SegmentedModel, chain; n_plot_points=200, lege
     breakpoint_y = vec(mean(breakpoint_y_samples, dims=2))
 
     # Create the plot
-    p = scatter(model.x, model.y, label="Data", alpha=1.0, legend=legend,color=:black)
+    p = scatter(model.x, model.y, label="Data", alpha=0.5, legend=legend)
 
     plot!(p, x_plot, y_mean,
           ribbon=(y_mean .- lower, upper .- y_mean),
@@ -95,7 +95,7 @@ function plot_mcmc_results(model::SegmentedModel, chain; n_plot_points=200, lege
           color = palette(:default)[4],linewidth = 1.5)
 
     scatter!(p, ψ_mean, breakpoint_y,
-             label="Posterior Breakpoints", ms=5, alpha=1.0,color=:black,mc = palette(:default)[4],msw=2,
+             label="Posterior Breakpoints", ms=5, alpha=1.0,
              xerror=1.96 .* ψ_se)
 
     xlabel!(p, "x")
@@ -212,29 +212,29 @@ dt = 1.0
 
 # Trajectory 1: Starting from u0=6
 println("\nSimulating trajectory 1 (u0=6)...")
-t1, u1 = simulate_population!(p, 10, tspan, dt)
+t1, u1 = simulate_population!(p, 6, tspan, dt)
 model1 = SegmentedModel(collect(t1), u1, 1)
 
 println("Running MCMC (2000 samples, 1000 warmup)...")
 @time chain1 = sample_mcmc(model1, n_samples=2000, n_adapts=1000)
 
 p1 = plot_mcmc_results(model1, chain1; legend=false)
-title!(p1, "Population Growth")
+title!(p1, "Population Growth (u₀=6, 1 breakpoint)")
 
 # Trajectory 2: Starting from u0=2
 println("\nSimulating trajectory 2 (u0=2)...")
-t2, u2 = simulate_population!(p, 1, tspan, dt)
+t2, u2 = simulate_population!(p, 2, tspan, dt)
 model2 = SegmentedModel(collect(t2), u2, 2)
 
 println("Running MCMC (2000 samples, 1000 warmup)...")
 @time chain2 = sample_mcmc(model2, n_samples=2000, n_adapts=1000)
 
 p2 = plot_mcmc_results(model2, chain2; legend=false)
-title!(p2, "")
+title!(p2, "Population Growth (u₀=2, 2 breakpoints)")
 
 # Combine plots
 println("\nSaving population growth plots...")
-plot(p1, p2, layout=@layout([a; b]), size=(600, 400), dpi=600)
+plot(p1, p2, layout=@layout([a; b]), size=(600, 800), dpi=600)
 savefig("img/population_growth_mcmc.svg")
 println("Saved to img/population_growth_mcmc.svg")
 
@@ -277,7 +277,7 @@ scatter!(p_sine, results_map.θ.ψ, results_map(collect(results_map.θ.ψ)),
          xerror=1.96 .* results_map.ψ_se)
 plot(p_sine,size = (600,400),titlefontsize=12,legendfontsize=8,titlelocation=:left)
 println("Saving sine wave comparison plot...")
-savefig(p_sine, "img/sine_map_vs_mcmc8.svg")
+savefig(p_sine, "img/sine_map_vs_mcmc6.svg")
 println("Saved to img/sine_map_vs_mcmc.png")
 
 #==============================================================================#
