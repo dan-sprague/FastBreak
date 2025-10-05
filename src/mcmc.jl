@@ -1,5 +1,3 @@
-using AdvancedHMC, MCMCChains, LinearAlgebra, Random, AbstractMCMC, LogDensityProblems
-
 """
     LogDensityGradient
 

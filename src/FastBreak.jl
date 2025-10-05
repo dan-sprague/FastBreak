@@ -97,11 +97,9 @@ function (m::FittedSegmentModel)(x)
     return y
 end
 
-include("univariate.jl")
+include("logposterior.jl")
 include("gradient.jl")
-include("hessian.jl")
 include("output.jl")
-include("stan_utils.jl")
 include("mcmc.jl")
 
 
