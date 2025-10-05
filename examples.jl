@@ -275,9 +275,9 @@ plot!(p_sine, x_plot, results_map(x_plot),
 scatter!(p_sine, results_map.θ.ψ, results_map(collect(results_map.θ.ψ)),
          label="MAP Breakpoints", ms=4, mc=:red, alpha=0.7,
          xerror=1.96 .* results_map.ψ_se)
-plot(p_sine,dpi=600)
+plot(p_sine,dpi=600,size = (400,300),titlefontsize=10,legendfontsize=5)
 println("Saving sine wave comparison plot...")
-savefig(p_sine, "img/sine_map_vs_mcmc.png")
+savefig(p_sine, "img/sine_map_vs_mcmc3.png")
 println("Saved to img/sine_map_vs_mcmc.png")
 
 #==============================================================================#
@@ -303,7 +303,7 @@ p_timing = bar(["Stan" "FastBreak"], [stan_time fastbreak_time],
                title="MCMC Timing Comparison (2000 samples)")
 
 println("\nSaving timing comparison plot...")
-savefig(p_timing, "img/mcmc_timing.png")
+savefig(p_timing, "img/mcmc_timing.png",dpi=600)
 println("Saved to img/mcmc_timing.png")
 
 println("\n" * "="^80)
