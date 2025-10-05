@@ -28,7 +28,9 @@ Identifying the probable interval of time that population growth curves change b
 However, more complex functions with closely spaced breakpoints require more complex fitting. 
 
 <p align = "center">
-<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_bayes.png" alt="Population Growth 1" width="90%"/>
+<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/stan.png" alt="Population Growth 1" width="30%"/>
+<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/mcmc_results.png" alt="Population Growth 1" width="30%"/>
+<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/mcmc_timing.png" alt="Population Growth 1" width="30%"/>
 </p>
 ## Installation
 

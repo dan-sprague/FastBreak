@@ -6,7 +6,10 @@ using Printf
 using StatsBase: mean, quantile, std
 using AdvancedHMC
 using MCMCChains
-using Distributions 
+using AbstractMCMC
+using LogDensityProblems
+using Random
+using Distributions
 using JSON
 
 #include("dist.jl")
@@ -99,10 +102,12 @@ include("gradient.jl")
 include("hessian.jl")
 include("output.jl")
 include("stan_utils.jl")
+include("mcmc.jl")
 
 
 
 export SegmentedModel, FittedSegmentModel, FittedParams, fit!, predict, print_results, write_stan_data
+export sample_mcmc, plot_mcmc_results
 
 end # module FastBreak
 
