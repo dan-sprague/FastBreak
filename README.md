@@ -25,14 +25,18 @@ Identifying the probable interval of time that population growth curves change b
   <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_2.png" alt="Population Growth 2" width="45%"/>
 </p>
 
-However, more complex functions with closely spaced breakpoints require more complex fitting. 
+However, more complex functions with closely spaced breakpoints require more complex fitting. Shown below is a fit performed using Stan.
 
 <p align = "center">
-<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/stan.png" alt="Population Growth 1" width="45%"/>
-<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/mcmc_results.png" alt="Population Growth 1" width="45%"/>
+<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/stan.png" alt="Population Growth 1" width="90%"/>
 </p>
 
-<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/mcmc_timing.png" alt="Population Growth 1" width="30%"/>
+FastBreak utilizes its handwritten gradient and the AdvancedHMC.jl library to perform ultrafast Bayesian inference.
+<p align = "center">
+<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/mcmc_results.png" alt="Population Growth 1" width="75%"/>
+<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/mcmc_timing.png" alt="Population Growth 1" width="25%"/>
+</p>
+
 
 ## Installation
 
