@@ -34,7 +34,7 @@ However, more complex functions with closely spaced breakpoints require more com
 FastBreak utilizes its handwritten gradient and the AdvancedHMC.jl library to perform ultrafast Bayesian inference.
 <p align = "center">
 <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/mcmc_results.png" alt="Population Growth 1" width="75%"/>
-<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/mcmc_timing.png" alt="Population Growth 1" width="25%"/>
+<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/mcmc_timing.png" alt="Population Growth 1" width="15%"/>
 </p>
 
 
