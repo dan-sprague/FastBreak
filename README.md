@@ -6,7 +6,7 @@ i.e., when did my population stop growing in treatment group A compared to group
 
 ## Overview
 
-FastBreak fits piecewise linear (segmented) regression models with an arbitrary number of breakpoints using maximum likelihood estimation. The package uses handrolled gradients and hessians to optimize using Newton's method, along with standard errors and confidence intervals for all parameters.
+FastBreak fits piecewise linear (segmented) regression models with an arbitrary number of breakpoints using maximum likelihood estimation OR MCMC posterior estimation. The package uses handrolled gradients and hessians to optimize using Newton's method, along with standard errors and confidence intervals for all parameters.
 
 ## Features
 
