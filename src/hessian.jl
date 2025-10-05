@@ -1,6 +1,6 @@
 # ======================= NOTE ===================================
 # This hessian was derived by CLAUDE because of its complexity.
-# It has been verified against finite difference approximations.
+# It has been verified against autodiff.
 # ================================================================
 
 
