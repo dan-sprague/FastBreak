@@ -275,9 +275,9 @@ plot!(p_sine, x_plot, results_map(x_plot),
 scatter!(p_sine, results_map.θ.ψ, results_map(collect(results_map.θ.ψ)),
          label="MAP Breakpoints", ms=4, mc=:red, alpha=0.7,
          xerror=1.96 .* results_map.ψ_se)
-plot(p_sine,dpi=600,size = (400,300),titlefontsize=10,legendfontsize=5)
+plot(p_sine,dpi=600,size = (800,600),titlefontsize=12,legendfontsize=8,titlelocation=:left)
 println("Saving sine wave comparison plot...")
-savefig(p_sine, "img/sine_map_vs_mcmc3.png")
+savefig(p_sine, "img/sine_map_vs_mcmc4.png")
 println("Saved to img/sine_map_vs_mcmc.png")
 
 #==============================================================================#

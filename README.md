@@ -18,7 +18,7 @@ Simple curves such as these can be fit nearly instantaneously.
 FastBreak utilizes its hardcoded gradient and the `AdvancedHMC.jl` library to perform ultrafast Bayesian inference. FastBreak fits about 3X faster than an equivalent Stan model. Importantly, FastBreak performs either point estimate fitting (MAP) or MCMC. 
 
 <p align = "center">
-<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc3.png" alt="Population Growth 1" width="400px" height = "300px"/>
+<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc4.png" alt="Population Growth 1" width="800px" height = "600px"/>
 </p>
 
 As shown above, the MAP fit looks enticing and in this case is a good fit against ground truth. However, the full Bayesian sampling indicates that the normality assumptions are probably not true. The full posterior estimate provides the most accurate picture of uncertainty for inference.
