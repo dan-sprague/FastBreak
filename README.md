@@ -13,7 +13,7 @@ Identifying the probable interval of time that population growth curves change b
 
 ### Complicated functions 
 
-This project began as simple MLE optimization using LBFGS, which worked fine on logistic growth curves. However, testing on complex sine behavior revealed catastrophic fit failures. Newton's was tested with autodiff which converged to the same bad fit. The solution was to better explore the solution space with Bayesian sampling.
+This project began as simple MLE optimization using LBFGS, which worked fine on logistic growth curves. However, testing on complex sine behavior revealed catastrophic fit failures even when using autodiff. The solution was to better explore the solution space with Bayesian sampling.
 
 FastBreak utilizes its hardcoded gradient and the `AdvancedHMC.jl` library to perform ultrafast Bayesian inference. FastBreak fits about 3X faster than an equivalent Stan model. 
 
