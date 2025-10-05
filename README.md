@@ -16,7 +16,7 @@ Identifying the probable interval of time that population growth curves change b
 However, more complex functions with closely spaced breakpoints require more complex fitting. FastBreak utilizes its hardcoded gradient and the `AdvancedHMC.jl` library to perform ultrafast Bayesian inference. FastBreak fits about 3X faster than an equivalent Stan model. 
 
 <p align = "center">
-<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/mcmc_results.png" alt="Population Growth 1" width="90%"/>
+<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc.png" alt="Population Growth 1" width="90%"/>
 </p>
 
 
