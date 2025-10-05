@@ -59,11 +59,11 @@ function SegmentedModel(
     )
 end
 
-""" 
+"""
 Fitted model parameters
 """
 struct FittedParams
-    ψ::Vector{Int}
+    ψ::Vector{Float64}
     β::Vector{Float64}
     σ::Float64
 end

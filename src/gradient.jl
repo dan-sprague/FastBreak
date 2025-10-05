@@ -61,7 +61,9 @@ function gradient!(grad, θ, model::SegmentedModel)
             grad[n_beta + i] = sum(grad_ψ)
         else
             # ∂L/∂θ_ψ[i] = Σ_{j≥i} ∂L/∂ψ[j] * exp(θ_ψ[i])
-            grad[n_beta + i] = sum(grad_ψ[i:end]) * exp(θ_ψ[i])
+            # Add Jacobian gradient: ∂/∂θ_ψ[i][log|det(J)|] = 1
+            # Since we subtract log|det(J)| from NLL, we subtract 1 from gradient
+            grad[n_beta + i] = sum(grad_ψ[i:end]) * exp(θ_ψ[i]) - 1.0
         end
     end
 

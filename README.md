@@ -1,11 +1,13 @@
 # FastBreak.jl
 
-Fast, bayesian detection of breakpoints in univariate time series data. Envisioned for biologists interested in asking: what is the probability that population A and B reached plateau growth phase at the same time, controlling for growth rate? Statistical inference can also be performed on slopes (growth rates)
+Fast detection of breakpoints in univariate time series data. Envisioned for biologists interested in asking: what is the probability that population A and B reached plateau growth phase at the same time, controlling for growth rate? Statistical inference can also be performed on slopes (growth rates)
 
 ## Use Case
 
 ### Biology 
-Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau) can be calculated in fractions of a second. Hypothesis testing on breakpoints can be performed intuitively using the posterior samples, or using the Wald test if you're feeling frequentist. 95% CI are reported for the slopes and breakpoint locations.
+Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau) can be calculated in fractions of a second. Hypothesis testing on breakpoints can be performed intuitively using either the full posterior (best) or Wald test.
+
+Simple curves such as these can be fit nearly instantaneously.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_mcmc.png" alt="Population Growth 1" width="90%"/>
@@ -13,28 +15,25 @@ Identifying the probable interval of time that population growth curves change b
 
 ### Complicated functions 
 
-This project began as simple MLE optimization using LBFGS, which worked fine on logistic growth curves. However, testing on complex sine behavior revealed catastrophic fit failures even when using autodiff. The solution was to better explore the solution space with Bayesian sampling.
-
-FastBreak utilizes its hardcoded gradient and the `AdvancedHMC.jl` library to perform ultrafast Bayesian inference. FastBreak fits about 3X faster than an equivalent Stan model. 
+FastBreak utilizes its hardcoded gradient and the `AdvancedHMC.jl` library to perform ultrafast Bayesian inference. FastBreak fits about 3X faster than an equivalent Stan model. Importantly, FastBreak performs either point estimate fitting (MAP) or MCMC. 
 
 <p align = "center">
 <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc.png" alt="Population Growth 1" width="90%"/>
 </p>
 
+As shown above, the MAP fit looks enticing and in this case is a good fit against ground truth. However, the full Bayesian sampling indicates that the normality assumptions are probably not true. The full posterior estimate provides the most accurate picture of uncertainty for inference.
+
 
 ## Method Overview
 
-FastBreak fits piecewise linear regression models with an arbitrary number of breakpoints using a fast MCMC sampler (< 1s for 2000 samples on hundreds of observations). All parameters are estimated **jointly** rather than in an iterative fashion. The package uses a hardcoded logposterior gradient to provide posterior samples in the blink of an eye. An initial MAP estimate is performed with Newton's method (Hessian derived with the assistance of Claude, because, well, no thanks!). 
+FastBreak fits piecewise linear regression models with an arbitrary number of breakpoints using a fast MCMC sampler (< 1s for 2000 samples on hundreds of observations). All parameters are estimated **jointly** rather than in an iterative fashion. The package uses a hardcoded logposterior gradient to yield either a MAP estimate or full posterior samples via MCMC in a flash.
 
-### Why Bayes?
+FastBreak differs from R's `segmented` library in its joint estimation of parameter values using standard optimization techniques.
 
-Standard optimization (MLE/MAP) performed well on simple growth curves, however that approach fails catastrophically on sine-like and more complex data, likely due to vanishing gradients and kinks in the loss induced by the breakpoints. R's `segmented` library uses an iterative fitting procedure however the hope for this library was for joint optimization of all parameters using gradient decent.
-
-Bayesian sampling appears to better explore the solution space, leading optimal solutions even though the gradient optimization is still there.
 
 ## Features
 
-Full Bayesian posterior for inference on generated and derived statistics!
+Full Bayesian posterior for inference on generated and derived statistics.
 
 - **Multiple breakpoints**: Fit models with any number of breakpoints
 - **Fast optimization**: Analytical gradients and Hessians for Newton's method

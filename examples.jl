@@ -91,7 +91,8 @@ function plot_mcmc_results(model::SegmentedModel, chain; n_plot_points=200, lege
 
     plot!(p, x_plot, y_mean,
           ribbon=(y_mean .- lower, upper .- y_mean),
-          fillalpha=0.3, label="MCMC Posterior (95% CI)", lw=2)
+          fillalpha=0.3, label="MCMC Posterior (95% CI)", lw=2,
+          color = palette(:default)[4])
 
     scatter!(p, ψ_mean, breakpoint_y,
              label="Breakpoints", ms=5, mc=:black,
@@ -247,7 +248,7 @@ println("="^80)
 
 # Generate noisy sine data
 println("\nGenerating noisy sine wave data...")
-x, y = noisy_sin(200, amplitude=5.0, frequency=2.0, noise_level=1.0, seed=42)
+x, y = noisy_sin(200, amplitude=5.0, frequency=2.0, noise_level=5.0, seed=42)
 model_sine = SegmentedModel(x, y, 4)
 
 # Fit using MAP estimation
@@ -269,7 +270,7 @@ title!(p_sine, "Sine Wave: MLE/MAP vs MCMC")
 # Add MAP fit
 plot!(p_sine, x_plot, results_map(x_plot),
       label="MAP Estimate", lw=2, ls=:dash, color=:red, alpha=0.7,
-      legend = :topleft)
+      legend = :bottomleft)
 
 scatter!(p_sine, results_map.θ.ψ, results_map(collect(results_map.θ.ψ)),
          label="MAP Breakpoints", ms=4, mc=:red, alpha=0.7,

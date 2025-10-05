@@ -112,8 +112,15 @@ function nll(θ, model::SegmentedModel)
         end
     end
 
-    # MAP objective = negative log posterior
-    return neg_log_likelihood + neg_log_prior
+    # Jacobian adjustment for ordered transformation
+    # When sampling in unconstrained space θ_ψ with priors on constrained ψ,
+    # we need: log p(θ_ψ) = log p(ψ(θ_ψ)) + log|det(∂ψ/∂θ_ψ)|
+    # For ordered transform: log|det(J)| = sum(θ_ψ[2:end])
+    # So we subtract this from the negative log posterior
+    log_jacobian_det = n_breakpoints > 1 ? sum(θ_ψ[2:end]) : 0.0
+
+    # MAP objective = negative log posterior (with Jacobian adjustment)
+    return neg_log_likelihood + neg_log_prior - log_jacobian_det
 end
 """
     fit!(model; kwargs...)
@@ -268,10 +275,9 @@ function fit!(model::SegmentedModel;
     
     D_inv = Diagonal(1.0 ./ standard_errors)
     correlation_matrix = D_inv * cov_full * D_inv
-    
-    # Create model (don't round to integers for continuous data!)
-    ψ_opt_int = round.(Int, ψ_opt_continuous)
-    θ_mle = FittedParams(ψ_opt_int, β_opt, σ_opt)
+
+    # Create fitted parameters with continuous breakpoint estimates
+    θ_mle = FittedParams(ψ_opt_continuous, β_opt, σ_opt)
 
     return FittedSegmentModel(
         θ_mle,
