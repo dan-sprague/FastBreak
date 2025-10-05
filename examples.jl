@@ -92,10 +92,10 @@ function plot_mcmc_results(model::SegmentedModel, chain; n_plot_points=200, lege
     plot!(p, x_plot, y_mean,
           ribbon=(y_mean .- lower, upper .- y_mean),
           fillalpha=0.3, label="MCMC Posterior (95% CI)", lw=2,
-          color = palette(:default)[4])
+          color = palette(:default)[4],linewidth = 1.5)
 
     scatter!(p, ψ_mean, breakpoint_y,
-             label="Breakpoints", ms=5, mc=:black,
+             label="Posterior Breakpoints", ms=5, alpha=1.0,color=:black,
              xerror=1.96 .* ψ_se)
 
     xlabel!(p, "x")
@@ -219,7 +219,7 @@ println("Running MCMC (2000 samples, 1000 warmup)...")
 @time chain1 = sample_mcmc(model1, n_samples=2000, n_adapts=1000)
 
 p1 = plot_mcmc_results(model1, chain1; legend=false)
-title!(p1, "Population Growth (u₀=6, 1 breakpoint)")
+title!(p1, "Population Growth")
 
 # Trajectory 2: Starting from u0=2
 println("\nSimulating trajectory 2 (u0=2)...")
@@ -230,13 +230,13 @@ println("Running MCMC (2000 samples, 1000 warmup)...")
 @time chain2 = sample_mcmc(model2, n_samples=2000, n_adapts=1000)
 
 p2 = plot_mcmc_results(model2, chain2; legend=false)
-title!(p2, "Population Growth (u₀=2, 2 breakpoints)")
+title!(p2, "")
 
 # Combine plots
 println("\nSaving population growth plots...")
-plot(p1, p2, layout=@layout([a; b]), size=(600, 800), dpi=600)
-savefig("img/population_growth_mcmc.png")
-println("Saved to img/population_growth_mcmc.png")
+plot(p1, p2, layout=@layout([a; b]), size=(600, 400), dpi=600)
+savefig("img/population_growth_mcmc.svg")
+println("Saved to img/population_growth_mcmc.svg")
 
 #==============================================================================#
 # Example 2: Sine Wave - MAP vs MCMC Comparison
@@ -277,7 +277,7 @@ scatter!(p_sine, results_map.θ.ψ, results_map(collect(results_map.θ.ψ)),
          xerror=1.96 .* results_map.ψ_se)
 plot(p_sine,size = (600,400),titlefontsize=12,legendfontsize=8,titlelocation=:left)
 println("Saving sine wave comparison plot...")
-savefig(p_sine, "img/sine_map_vs_mcmc6.svg")
+savefig(p_sine, "img/sine_map_vs_mcmc8.svg")
 println("Saved to img/sine_map_vs_mcmc.png")
 
 #==============================================================================#
