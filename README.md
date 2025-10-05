@@ -5,7 +5,7 @@ Fast, bayesian detection of breakpoints in univariate time series data. Envision
 ## Use Case
 
 ### Biology 
-Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau) can be calculated in fractions of a second. Hypothesis testing on breakpoints can be performed using the Wald test. 95% CI are reported for the slopes and breakpoint locations.
+Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau) can be calculated in fractions of a second. Hypothesis testing on breakpoints can be performed intuitively using the posterior samples, or using the Wald test if you're feeling frequentist. 95% CI are reported for the slopes and breakpoint locations.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_mcmc.png" alt="Population Growth 1" width="90%"/>
