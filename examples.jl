@@ -282,32 +282,39 @@ println("Saving sine wave comparison plot...")
 savefig(p_sine, "img/sine_map_vs_mcmc_finall.svg")
 println("Saved to img/sine_map_vs_mcmc.png")
 
-#==============================================================================#
-# Example 3: Performance Comparison with Stan
-#==============================================================================#
 
-println("\n" * "="^80)
-println("Example 3: Performance Comparison")
-println("="^80)
 
-# These timings are from running equivalent models in Stan vs FastBreak
-stan_time = 6.677  # seconds
-fastbreak_time = 2.08  # seconds
 
-println("\nTiming Results:")
-println("  Stan:      $(stan_time)s")
-println("  FastBreak: $(fastbreak_time)s")
-println("  Speedup:   $(round(stan_time/fastbreak_time, digits=2))x faster")
 
-p_timing = bar(["Stan" "FastBreak"], [stan_time fastbreak_time],
-               color=:black, legend=false, dpi=600, size=(400, 300),
-               xlabel="Method", ylabel="Time (s)",
-               title="MCMC Timing Comparison (2000 samples)")
+# Generate noisy sine data
+println("\nGenerating noisy sine wave data...")
+x, y = noisy_sin(200, amplitude=5.0, frequency=2.0, noise_level=3.0, seed=42)
+model_sine = SegmentedModel(x, y, 4)
 
-println("\nSaving timing comparison plot...")
-savefig(p_timing, "img/mcmc_timing.png",dpi=600)
-println("Saved to img/mcmc_timing.png")
+# Fit using MAP estimation
+println("\nFitting MAP estimate...")
+@time results_map = FastBreak.fit!(model_sine, show_trace=false, max_iter=1000)
 
-println("\n" * "="^80)
-println("All examples completed!")
-println("="^80)
+# Fit using MCMC
+println("\nRunning MCMC (2000 samples, 1000 warmup)...")
+@time chain_sine = sample_mcmc(model_sine, n_samples=2000, n_adapts=1000)
+
+# Create comparison plot
+println("\nCreating comparison plot...")
+x_plot = range(minimum(x), maximum(x), length=200)
+
+# Start with MCMC results
+p_sine = plot_mcmc_results(model_sine, chain_sine; legend=:topright,)
+title!(p_sine, "Slightly Less Noise")
+
+# Add MAP fit
+plot!(p_sine, x_plot, results_map(x_plot),
+      label="MAP Estimate", lw=2, ls=:dash, color=:blue, alpha=1.0,
+      legend = :bottomleft)
+
+scatter!(p_sine, results_map.θ.ψ, results_map(collect(results_map.θ.ψ)),
+         label="MAP Breakpoints", ms=4, mc=:blue, alpha=1.0,
+         xerror=1.96 .* results_map.ψ_se)
+plot(p_sine,size = (600,400),titlefontsize=12,legendfontsize=8,titlelocation=:left)
+println("Saving sine wave comparison plot...")
+savefig(p_sine, "img/sine_map_vs_mcmc_final_low_noise.svg")
