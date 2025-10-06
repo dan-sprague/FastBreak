@@ -315,6 +315,6 @@ plot!(p_sine, x_plot, results_map(x_plot),
 scatter!(p_sine, results_map.θ.ψ, results_map(collect(results_map.θ.ψ)),
          label="MAP Breakpoints", ms=4, mc=:blue, alpha=1.0,
          xerror=1.96 .* results_map.ψ_se)
-plot(p_sine,size = (600,400),titlefontsize=12,legendfontsize=8,titlelocation=:left,legend=:none)
+p_sine = plot(p_sine,size = (600,400),titlefontsize=12,legendfontsize=8,titlelocation=:left,legend=false)
 println("Saving sine wave comparison plot...")
-savefig(p_sine, "img/sine_map_vs_mcmc_final_low_noise2.svg")
+savefig(p_sine, "img/sine_map_vs_mcmc_final_low_noise4.svg")

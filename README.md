@@ -19,7 +19,7 @@ FastBreak utilizes its hardcoded gradient and the `AdvancedHMC.jl` library to pe
 
 <p align = "center">
 <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc_finall.svg" alt="Population Growth 1" width="45%"/>
-<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc_final_low_noise2.svg" alt="Population Growth 1" width="45%"/>
+<img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc_final_low_noise4.svg" alt="Population Growth 1" width="45%"/>
 </p>
 
 As shown above, the MAP fit looks enticing and in this case is a good fit against ground truth. However, the full Bayesian sampling indicates that the normality assumptions are probably not true. The full posterior estimate provides the most accurate picture of uncertainty for inference.
