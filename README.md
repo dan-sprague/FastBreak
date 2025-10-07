@@ -12,7 +12,7 @@ Identifying the probable interval of time that population growth curves change b
 Simple curves such as these can be fit nearly instantaneously.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_mcmc_final_morenoise3.svg" alt="Population Growth 1" width="98%"/>
+  <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_mcmc_final_morenoise5.svg" alt="Population Growth 1" width="98%"/>
 </p>
 
 ### Complicated functions 

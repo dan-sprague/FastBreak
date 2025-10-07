@@ -180,27 +180,23 @@ Simulate stochastic logistic population growth using Poisson process.
 - `t::StepRangeLen`: time points
 - `u::Vector{Int}`: population size at each time point
 """
-function simulate_population!(p::Population, u0::Int, tspan::Tuple{Int, Int}, dt::Float64;
-                              env_noise::Float64=1.5,
-                              demographic_noise_scale::Float64=1.0)
+function simulate_population!(p::Population, u0::Int, tspan::Tuple{Int, Int}, dt::Float64)
     t = tspan[1]:dt:tspan[2]
     u = zeros(Int, length(t))
     u[1] = u0
 
     for i in 2:length(t)
-        # Environmental stochasticity (affects all individuals)
-        r_noisy = p.r * exp(env_noise * randn())
-        
-        # Separate birth and death with scaled demographic noise
-        birth_rate = r_noisy * u[i-1] * dt * demographic_noise_scale
-        death_rate = (r_noisy * u[i-1]^2 / p.K) * dt * demographic_noise_scale
-        
-        births = rand(Poisson(max(0.0, birth_rate)))
-        deaths = rand(Poisson(max(0.0, death_rate)))
-        
-        u[i] = max(0, u[i-1] + births - deaths)
+        # Discrete logistic growth with Poisson noise
+        growth_rate = du(u[i-1], p) * dt
+        u[i] = if growth_rate > 0
+            births = rand(Poisson(abs(growth_rate)))
+            u[i-1] + births
+        else
+            deaths = rand(Poisson(abs(growth_rate)))
+            max(0, u[i-1] - deaths)
+        end
     end
-    return t, u
+    return t, u 
 end
 
 #==============================================================================#
@@ -212,14 +208,15 @@ println("Example 1: Population Growth")
 println("="^80)
 
 # Simulate two different population trajectories
-p = Population(0.04, 20, 100)  # r=0.1, P=10, K=100
+p = Population(0.1, 20, 100)  # r=0.1, P=10, K=100
 tspan = (0, 100)
 dt = 1.0
 
 # Trajectory 1: Starting from u0=6
 println("\nSimulating trajectory 1 (u0=6)...")
 t1, u1 = simulate_population!(p, 10, tspan, dt)
-model1 = SegmentedModel(collect(t1), u1, 1)
+subset = 1:10:100
+model1 = SegmentedModel(collect(t1)[subset], u1[subset], 1)
 
 println("Running MCMC (2000 samples, 1000 warmup)...")
 @time chain1 = sample_mcmc(model1, n_samples=2000, n_adapts=1000)
@@ -229,8 +226,8 @@ title!(p1, "Population Growth",titleposition=:left)
 
 # Trajectory 2: Starting from u0=2
 println("\nSimulating trajectory 2 (u0=2)...")
-t2, u2 = simulate_population!(p, 2, tspan, dt)
-model2 = SegmentedModel(collect(t2), u2, 2)
+t2, u2 = simulate_population!(p, 1, tspan, dt)
+model2 = SegmentedModel(collect(t2)[subset], u2[subset], 2)
 
 println("Running MCMC (2000 samples, 1000 warmup)...")
 @time chain2 = sample_mcmc(model2, n_samples=2000, n_adapts=1000)
@@ -241,7 +238,7 @@ title!(p2, "")
 # Combine plots
 println("\nSaving population growth plots...")
 p2 = plot(p1, p2, layout=@layout([a  b]), size=(800, 300), dpi=600,bottommargin=5Plots.mm)
-savefig("img/population_growth_mcmc_final_morenoise3.svg")
+savefig("img/population_growth_mcmc_final_morenoise5.svg")
 println("Saved to img/population_growth_mcmc.svg")
 
 #==============================================================================#
