@@ -153,7 +153,7 @@ function fit!(model::SegmentedModel;
     ψ_init_ordered = if n_breakpoints == 1
         [quantile(x, 0.5)]
     else
-        [quantile(x, q) for q in range(0.2, 0.8, length=n_breakpoints)]
+        [quantile(x, q) for q in range(0.1, 0.9, length=n_breakpoints)]
     end
 
     # Transform to unconstrained space

@@ -17,7 +17,7 @@ Simple curves such as these can be fit nearly instantaneously.
 
 ### Complicated functions 
 
-Segmented regression can be used to fit more complicated functions, although past a certain point other methods should be used. Fastbreak.jl uses the same `ordered` vector approach used in STAN to impose identifiability on the breakpoints, but this imposes a funneling effect that makes MCMC difficult with many dense breakpoints. Shown below is a segmented regression fit to a noisy sine curve. In this case, the posterior estimated via MCMC appears to better estimate $\mathbb{E}[f(x)]$ than the MAP point estimate (left), however the breakpoints are poorly resolved. Slightly decreasing the noise relieves the issue (right), indicating potential numerical instability during MCMC sampling.
+Segmented regression can be used to fit more complicated functions. Fastbreak.jl uses the same ordered vector approach as Stan for breakpoints, however this imposes a funneling effect that makes MCMC difficult with many dense breakpoints. Shown below is a segmented regression fit to a noisy sine curve. In this case, the posterior estimated via MCMC appears to better estimate $\mathbb{E}[f(x)]$ than the MAP point estimate (left).  Decreasing the noise results in more confident breakpoint predictions (right)
 
 
 <p align = "center">
@@ -25,7 +25,12 @@ Segmented regression can be used to fit more complicated functions, although pas
 <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc_final_low_noise4.svg" alt="Population Growth 1" width="49%"/>
 </p>
 
-MAP fit took 0.07s and MCMC 1.21s (2,000 samples, 1,000 warmup). While the error estimated from the MAP is surely an underestimate, for complex models the MAP fit may be superior.
+Indeed, while it probably well outside the scope of most change point analyses, good fits can be achieved for relatively many breakpoints. However, numerical instabilities become common after a while. 
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc_final_low_complicated.svg" alt="Population Growth 1" width="98%"/>
+</p>
+
 
 
 ## Method Overview

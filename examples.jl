@@ -263,7 +263,7 @@ println("\nFitting MAP estimate...")
 
 # Fit using MCMC
 println("\nRunning MCMC (2000 samples, 1000 warmup)...")
-@time chain_sine = sample_mcmc(model_sine, n_samples=2000, n_adapts=1000)
+@time chain_sine = sample_mcmc(model_sine, n_samples=2000, n_adapts=1000,δ = 0.99)
 
 # Create comparison plot
 println("\nCreating comparison plot...")
@@ -292,18 +292,19 @@ println("Saved to img/sine_map_vs_mcmc.png")
 
 # Generate noisy sine data
 println("\nGenerating noisy sine wave data...")
-x, y = noisy_sin(200, amplitude=5.0, xmax=20,frequency=1.0, noise_level=1.0, seed=42)
-model_sine = SegmentedModel(x, y,6)
+x, y = noisy_sin(500, amplitude=5.0, xmax=50,frequency=0.5, noise_level=1.5, seed=42)
+model_sine = SegmentedModel(x, y,8)
 
 # Fit using MAP estimation
 println("\nFitting MAP estimate...")
-@time results_map = FastBreak.fit!(model_sine, show_trace=false, max_iter=1000)
+@time results_map = FastBreak.fit!(model_sine, show_trace=false, max_iter=2000)
 
 # Fit using MCMC
 println("\nRunning MCMC (2000 samples, 1000 warmup)...")
-@time chain_sine = sample_mcmc(model_sine, n_samples=2000, n_adapts=1000,δ = 0.80)
+@time chain_sine = sample_mcmc(model_sine, n_samples=2000, n_adapts=1000,δ = 0.99)
 
 # Create comparison plot
+
 println("\nCreating comparison plot...")
 x_plot = range(minimum(x), maximum(x), length=200)
 
@@ -311,17 +312,17 @@ x_plot = range(minimum(x), maximum(x), length=200)
 p_sine = plot_mcmc_results(model_sine, chain_sine; legend=:topright,)
 
 
-title!(p_sine, "Slightly Less Noise")
+title!(p_sine, "K = 8 breakpoints",titleposition=:left)
 
 # Add MAP fit
 plot!(p_sine, x_plot, results_map(x_plot),
       label="MAP Estimate", lw=2, ls=:dash, color=:blue, alpha=1.0,
-      legend = :bottomleft)
+      legend = :outertopright)
 
 
       scatter!(p_sine, results_map.θ.ψ, results_map(collect(results_map.θ.ψ)),
          label="MAP Breakpoints", ms=4, mc=:blue, alpha=1.0,
          xerror=1.96 .* results_map.ψ_se)
-p_sine = plot(p_sine,size = (600,400),titlefontsize=12,legendfontsize=8,titlelocation=:left,legend=false)
+p_sine = plot(p_sine,size = (900,400),titlefontsize=12,legendfontsize=8,titlelocation=:left)
 println("Saving sine wave comparison plot...")
-savefig(p_sine, "img/sine_map_vs_mcmc_final_low_noise4.svg")
+savefig(p_sine, "img/sine_map_vs_mcmc_final_low_complicated.svg")
