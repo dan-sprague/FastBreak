@@ -17,7 +17,7 @@ Simple curves such as these can be fit nearly instantaneously.
 
 ### Complicated functions 
 
-Segmented regression can be used to fit more complicated functions, although past a certain point other methods should be used. Fastbreak.jl uses the same `ordered` vector approach used in STAN to impose identifiability on the breakpoints, but this imposes a funneling effect that makes MCMC difficult with many dense breakpoints. Shown below is a segmented regression fit to a noisy sine curve. In this case, the posterior estimated via MCMC appears to better estimate $\mathbb{E}_{x \sim p(x|\theta)}[f(x)]$ than the MAP point estimate (left), however the breakpoints are poorly resolved. Slightly decreasing the noise relieves the issue (right), indicating potential numerical instability during MCMC sampling.
+Segmented regression can be used to fit more complicated functions, although past a certain point other methods should be used. Fastbreak.jl uses the same `ordered` vector approach used in STAN to impose identifiability on the breakpoints, but this imposes a funneling effect that makes MCMC difficult with many dense breakpoints. Shown below is a segmented regression fit to a noisy sine curve. In this case, the posterior estimated via MCMC appears to better estimate $\mathbb{E}[f(x)]$ than the MAP point estimate (left), however the breakpoints are poorly resolved. Slightly decreasing the noise relieves the issue (right), indicating potential numerical instability during MCMC sampling.
 
 
 <p align = "center">
