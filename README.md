@@ -9,7 +9,6 @@ Fastbreak.jl is best specified for a small number of breakpoints, i.e. a small n
 ### Biology 
 Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau) can be calculated almost instantly using either point estimate (MAP) or full posterior estimation using MCMC. Hypothesis testing on breakpoints can be performed intuitively using either the full posterior (best) or Wald test.
 
-Simple curves such as these can be fit nearly instantaneously.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/population_growth_mcmc_final_morenoise5.svg" alt="Population Growth 1" width="98%"/>
