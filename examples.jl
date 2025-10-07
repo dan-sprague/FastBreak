@@ -241,7 +241,7 @@ title!(p2, "")
 # Combine plots
 println("\nSaving population growth plots...")
 p2 = plot(p1, p2, layout=@layout([a  b]), size=(800, 300), dpi=600,bottommargin=5Plots.mm)
-savefig("img/population_growth_mcmc_final_morenoise.svg")
+savefig("img/population_growth_mcmc_final_morenoise3.svg")
 println("Saved to img/population_growth_mcmc.svg")
 
 #==============================================================================#
