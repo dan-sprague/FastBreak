@@ -28,7 +28,7 @@ Segmented regression can be used to fit more complicated functions. Fastbreak.jl
 Indeed, despite being well outside the scope of most change point analyses, good fits can be achieved for larger numbers of breakpoints. However, numerical and sampling stability becomes a challenge. Keep in mind that despite modeling $y = f(x)$, this is no longer a "univariate" regression. For $K = 8$ break points, the model now was $20$ parameters to jointly estimate, on top of the complex funneling effect in the breakpoints!
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc_final_low_complicated.svg" alt="Population Growth 1" width="98%"/>
+  <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc_final_low_complicated2.svg" alt="Population Growth 1" width="98%"/>
 </p>
 
 

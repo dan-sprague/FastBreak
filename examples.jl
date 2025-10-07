@@ -325,4 +325,4 @@ plot!(p_sine, x_plot, results_map(x_plot),
          xerror=1.96 .* results_map.ψ_se)
 p_sine = plot(p_sine,size = (900,400),titlefontsize=12,legendfontsize=8,titlelocation=:left)
 println("Saving sine wave comparison plot...")
-savefig(p_sine, "img/sine_map_vs_mcmc_final_low_complicated.svg")
+savefig(p_sine, "img/sine_map_vs_mcmc_final_low_complicated2.svg")
