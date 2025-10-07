@@ -283,7 +283,7 @@ scatter!(p_sine, results_map.θ.ψ, results_map(collect(results_map.θ.ψ)),
          xerror=1.96 .* results_map.ψ_se)
 plot(p_sine,size = (600,400),titlefontsize=12,legendfontsize=8,titlelocation=:left)
 println("Saving sine wave comparison plot...")
-savefig(p_sine, "img/sine_map_vs_mcmc_finall.svg")
+savefig(p_sine, "img/sine_map_vs_mcmc_final_fixed.svg")
 println("Saved to img/sine_map_vs_mcmc.png")
 
 
