@@ -1,11 +1,13 @@
 # FastBreak.jl
 
-Fast detection of breakpoints in univariate time series data. Envisioned for biologists interested in asking: what is the probability that population A and B reached plateau growth phase at the same time, controlling for growth rate? Statistical inference can also be performed on slopes (growth rates)
+A package for quickly estimating when changes in behavior occur between two variables using Bayesian inference. Envisioned for biologists interested in asking: what is the probability that population A and B reached plateau growth phase at the same time, controlling for growth rate? Statistical inference can also be performed on slopes (growth rates)
 
 ## Uses
 
+Fastbreak.jl is best specified for a small number of breakpoints, i.e. a small number of time-dependent interventions or hypothesized changes in behvaior.
+
 ### Biology 
-Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau) can be calculated in fractions of a second. Hypothesis testing on breakpoints can be performed intuitively using either the full posterior (best) or Wald test.
+Identifying the probable interval of time that population growth curves change behavior (exponential/linear/plateau) can be calculated almost instantly using either point estimate (MAP) or full posterior estimation using MCMC. Hypothesis testing on breakpoints can be performed intuitively using either the full posterior (best) or Wald test.
 
 Simple curves such as these can be fit nearly instantaneously.
 
@@ -15,7 +17,7 @@ Simple curves such as these can be fit nearly instantaneously.
 
 ### Complicated functions 
 
-FastBreak.jl utilizes an analytical gradient with the `AdvancedHMC.jl` library to perform speedy Bayesian inference, about 2-3X faster than Stan. Fast MAP estimates are available via Newton's method but may underestimate uncertainty in the parameter estimate.
+Segmented regression can be used to fit more complicates functios utilizes an analytical gradient with the `AdvancedHMC.jl` library to perform speedy Bayesian inference, about 2-3X faster than Stan. Fast MAP estimates are available via Newton's method but may underestimate uncertainty in the parameter estimate.
 
 <p align = "center">
 <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc_finall.svg" alt="Population Growth 1" width="49%"/>
