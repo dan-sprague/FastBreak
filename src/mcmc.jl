@@ -67,6 +67,7 @@ psi_samples = chain[:psi]
 function sample_mcmc(model::SegmentedModel;
                      n_samples::Int=1000,
                      n_adapts::Int=1000,
+                     δ = 0.65,
                      init_params::Union{Nothing,Vector{Float64}}=nothing,
                      seed::Union{Nothing,Int}=nothing)
 
@@ -97,9 +98,6 @@ function sample_mcmc(model::SegmentedModel;
 
     # Wrap in LogDensityModel for AbstractMCMC interface
     ℓ_model = AbstractMCMC.LogDensityModel(ℓ)
-
-    # Set up NUTS sampler with target acceptance rate δ = 0.8
-    δ = 0.8
     nuts = NUTS(δ)
 
     # Run sampling with adaptation
