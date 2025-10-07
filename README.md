@@ -25,6 +25,8 @@ Segmented regression can be used to fit more complicated functions, although pas
 <img src="https://raw.githubusercontent.com/dan-sprague/FastBreak/main/img/sine_map_vs_mcmc_final_low_noise4.svg" alt="Population Growth 1" width="49%"/>
 </p>
 
+MAP fit took 0.07s and MCMC 1.21s (2,000 samples, 1,000 warmup). While the error estimated from the MAP is surely an underestimate, for complex models the MAP fit may be superior.
+
 
 ## Method Overview
 
