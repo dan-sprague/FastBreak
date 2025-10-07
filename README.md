@@ -1,6 +1,6 @@
 # FastBreak.jl
 
-A package for quickly estimating when changes in data behavior occur between two variables using Bayesian inference. Envisioned for biologists interested in asking: what is the probability that population A and B reached plateau growth phase at the same time, controlling for growth rate? Statistical inference can also be performed on slopes (growth rates)
+A package for quickly estimating when changes in data behavior occur between two variables using Bayesian inference. Envisioned for biologists interested in asking: what is the probability that population A and B reached plateau growth phase at the same time, accounting for growth rates?
 
 ## Uses
 
