@@ -98,7 +98,6 @@ function (m::FittedSegmentModel)(x)
 end
 
 include("gradient.jl")
-include("hessian.jl")
 include("logposterior.jl")
 include("output.jl")
 include("mcmc.jl")
@@ -106,7 +105,7 @@ include("mcmc.jl")
 
 
 export SegmentedModel, FittedSegmentModel, FittedParams, fit!, predict, print_results, write_stan_data
-export sample_mcmc, plot_mcmc_results
+export sample_logposterior, plot_mcmc_results
 
 end # module FastBreak
 

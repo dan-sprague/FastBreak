@@ -21,12 +21,12 @@ LogDensityProblems.dimension(ℓ::LogDensityGradient) = ℓ.n_params
 LogDensityProblems.capabilities(::Type{<:LogDensityGradient}) = LogDensityProblems.LogDensityOrder{1}()
 
 function LogDensityProblems.logdensity(ℓ::LogDensityGradient, θ::AbstractVector)
-    return -nll(θ, ℓ.model)
+    return -negativeloglikelihood(θ, ℓ.model)
 end
 
 function LogDensityProblems.logdensity_and_gradient(ℓ::LogDensityGradient, θ::AbstractVector)
     # Compute log posterior
-    log_p = -nll(θ, ℓ.model)
+    log_p = -negativeloglikelihood(θ, ℓ.model)
 
     # Compute gradient
     ∇log_p = zeros(length(θ))
@@ -37,7 +37,7 @@ function LogDensityProblems.logdensity_and_gradient(ℓ::LogDensityGradient, θ:
 end
 
 """
-    sample_mcmc(model::SegmentedModel;
+    sample_logposterior(model::SegmentedModel;
                 n_samples=1000,
                 n_adapts=1000,
                 init_params=nothing,
@@ -58,13 +58,13 @@ Sample from the posterior using NUTS (No-U-Turn Sampler) with δ=0.8.
 # Example
 ```julia
 model = SegmentedModel(x, y, 4)
-chain = sample_mcmc(model, n_samples=2000, n_adapts=1000)
+chain = sample_logposterior(model, n_samples=2000, n_adapts=1000)
 
 # Extract breakpoint samples
 psi_samples = chain[:psi]
 ```
 """
-function sample_mcmc(model::SegmentedModel;
+function sample_logposterior(model::SegmentedModel;
                      n_samples::Int=1000,
                      n_adapts::Int=1000,
                      δ = 0.65,

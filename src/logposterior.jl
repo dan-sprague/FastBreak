@@ -5,6 +5,8 @@ Transform unconstrained breakpoint parameters to ordered breakpoints.
 Uses STAN's ordered parameter transformation:
 - ψ[1] = θ[1] (unconstrained)
 - ψ[i] = ψ[i-1] + exp(θ[i]) for i > 1
+
+See: https://mc-stan.org/docs/2_24/reference-manual/ordered-vector.html
 """
 function transform_to_ordered(θ_unconstrained::Vector{Float64})
     n = length(θ_unconstrained)
@@ -25,6 +27,8 @@ end
 
 Transform ordered breakpoints to unconstrained space.
 Inverse of transform_to_ordered.
+
+See: https://mc-stan.org/docs/2_24/reference-manual/ordered-vector.html
 """
 function transform_from_ordered(ψ::Vector{Float64})
     n = length(ψ)
@@ -57,14 +61,14 @@ function predict(model::SegmentedModel, θ::Vector{Float64})
     
     return ŷ
 end
-function nll(θ, model::SegmentedModel)
+function negativeloglikelihood(θ, model::SegmentedModel)
     n = length(model.y)
     n_breakpoints = model.n_breakpoints
     n_beta = n_breakpoints + 2
 
     β = θ[1:n_beta]
     θ_ψ = θ[n_beta+1:n_beta+n_breakpoints]
-    ψ = transform_to_ordered(θ_ψ)  # Transform to ordered space
+    ψ = transform_to_ordered(θ_ψ) 
     log_σ = θ[end]
     σ = exp(log_σ)
 
@@ -112,11 +116,7 @@ function nll(θ, model::SegmentedModel)
         end
     end
 
-    # Jacobian adjustment for ordered transformation
-    # When sampling in unconstrained space θ_ψ with priors on constrained ψ,
-    # we need: log p(θ_ψ) = log p(ψ(θ_ψ)) + log|det(∂ψ/∂θ_ψ)|
-    # For ordered transform: log|det(J)| = sum(θ_ψ[2:end])
-    # So we subtract this from the negative log posterior
+    # Stan https://mc-stan.org/docs/2_24/reference-manual/ordered-vector.html
     log_jacobian_det = n_breakpoints > 1 ? sum(θ_ψ[2:end]) : 0.0
 
     # MAP objective = negative log posterior (with Jacobian adjustment)
@@ -163,18 +163,15 @@ function fit!(model::SegmentedModel;
     params_init = vcat(β_init, θ_ψ_init, log_σ_init)
 
     # Define objective and gradient
-    obj(p) = nll(p, model)
+    obj(p) = negativeloglikelihood(p, model)
 
     function grad!(g, p)
         gradient!(g, p, model)
     end
 
-    function hess!(h, p)
-        hessian!(h, p, model)
-    end
 
     println("Optimizing...")
-    result = optimize(obj, grad!, hess!, params_init, Newton(),
+    result = optimize(obj, grad!, params_init, LBFGS,
                      Optim.Options(iterations=max_iter,
                                   show_trace=show_trace))
 

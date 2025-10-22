@@ -27,7 +27,7 @@ Create a plot of MCMC results with credible intervals and breakpoint estimates.
 
 # Arguments
 - `model::SegmentedModel`: the segmented regression model
-- `chain::Chains`: MCMC chain from sample_mcmc
+- `chain::Chains`: MCMC chain from sample_logposterior
 - `n_plot_points::Int`: number of points for plotting predictions (default: 200)
 - `legend`: legend position (default: :best)
 
@@ -219,7 +219,7 @@ subset = 1:10:100
 model1 = SegmentedModel(collect(t1)[subset], u1[subset], 1)
 
 println("Running MCMC (2000 samples, 1000 warmup)...")
-@time chain1 = sample_mcmc(model1, n_samples=2000, n_adapts=1000)
+@time chain1 = sample_logposterior(model1, n_samples=2000, n_adapts=1000)
 
 p1 = plot_mcmc_results(model1, chain1; legend=false)
 title!(p1, "Population Growth",titleposition=:left)
@@ -230,7 +230,7 @@ t2, u2 = simulate_population!(p, 1, tspan, dt)
 model2 = SegmentedModel(collect(t2)[subset], u2[subset], 2)
 
 println("Running MCMC (2000 samples, 1000 warmup)...")
-@time chain2 = sample_mcmc(model2, n_samples=2000, n_adapts=1000)
+@time chain2 = sample_logposterior(model2, n_samples=2000, n_adapts=1000)
 
 p2 = plot_mcmc_results(model2, chain2; legend=false)
 title!(p2, "")
@@ -260,7 +260,7 @@ println("\nFitting MAP estimate...")
 
 # Fit using MCMC
 println("\nRunning MCMC (2000 samples, 1000 warmup)...")
-@time chain_sine = sample_mcmc(model_sine, n_samples=2000, n_adapts=1000,δ = 0.99)
+@time chain_sine = sample_logposterior(model_sine, n_samples=2000, n_adapts=1000,δ = 0.99)
 
 # Create comparison plot
 println("\nCreating comparison plot...")
@@ -298,7 +298,7 @@ println("\nFitting MAP estimate...")
 
 # Fit using MCMC
 println("\nRunning MCMC (2000 samples, 1000 warmup)...")
-@time chain_sine = sample_mcmc(model_sine, n_samples=2000, n_adapts=1000,δ = 0.99)
+@time chain_sine = sample_logposterior(model_sine, n_samples=2000, n_adapts=1000,δ = 0.99)
 
 # Create comparison plot
 
@@ -323,3 +323,18 @@ plot!(p_sine, x_plot, results_map(x_plot),
 p_sine = plot(p_sine,size = (900,400),titlefontsize=12,legendfontsize=8,titlelocation=:left)
 println("Saving sine wave comparison plot...")
 savefig(p_sine, "img/sine_map_vs_mcmc_final_low_complicated2.svg")
+
+
+### FLAT line 
+
+f(x) = -3.0 .* x .+ 10.0
+x = range(0, 100, length=200)
+y = f.(x) .+ randn(200) .* 5.0
+model_flat = SegmentedModel(collect(x), y, 1)   
+
+samples = sample_logposterior(model_flat, n_samples=2000, n_adapts=1000)
+
+
+plot_mcmc_results(model_flat, samples; legend=:topright,)
+
+describe(samples)
